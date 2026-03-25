@@ -1,0 +1,67 @@
+export const products = [
+  {
+    id: 1,
+    name: "Wireless Headphones",
+    price: 89.99,
+    stock: 42,
+    status: "in_stock",
+  },
+  {
+    id: 2,
+    name: "Running Shoes",
+    price: 124.5,
+    stock: 18,
+    status: "in_stock",
+  },
+  {
+    id: 3,
+    name: "Coffee Maker",
+    price: 59.99,
+
+    stock: 0,
+    status: "out_of_stock",
+  },
+  { id: 4, name: "Yoga Mat", price: 35.0, stock: 75, status: "in_stock" },
+  {
+    id: 5,
+    name: "Mechanical Keyboard",
+    price: 149.99,
+    stock: 5,
+    status: "low_stock",
+  },
+  {
+    id: 6,
+    name: "Stainless Water Bottle",
+    price: 22.0,
+    stock: 200,
+    status: "in_stock",
+  },
+  {
+    id: 7,
+    name: "Noise Cancelling Earbuds",
+    price: 199.0,
+    stock: 3,
+    status: "low_stock",
+  },
+  {
+    id: 8,
+    name: "Backpack 30L",
+    price: 68.0,
+    stock: 0,
+    status: "out_of_stock",
+  },
+  {
+    id: 9,
+    name: "Resistance Band Set",
+    price: 28.5,
+    stock: 90,
+    status: "in_stock",
+  },
+  {
+    id: 10,
+    name: "Smart Watch",
+    price: 249.99,
+    stock: 11,
+    status: "in_stock",
+  },
+];
