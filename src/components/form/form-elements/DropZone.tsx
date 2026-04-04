@@ -2,9 +2,7 @@ import { useDropzone } from "react-dropzone";
 import ComponentCard from "../../common/ComponentCard";
 
 const DropzoneComponent: React.FC = () => {
-  const onDrop = (acceptedFiles: File[]) => {
-    console.log("Files dropped:", acceptedFiles);
-  };
+  const onDrop = () => undefined;
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -61,7 +59,9 @@ const DropzoneComponent: React.FC = () => {
               Drag and drop your PNG, JPG, WebP, SVG images here or browse
             </span>
 
-            <span className="font-medium underline text-theme-sm text-brand-500">Browse File</span>
+            <span className="font-medium underline text-theme-sm text-brand-500">
+              Browse File
+            </span>
           </div>
         </form>
       </div>

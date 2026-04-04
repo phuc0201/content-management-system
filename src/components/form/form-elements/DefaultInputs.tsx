@@ -13,9 +13,7 @@ export default function DefaultInputs() {
     { value: "template", label: "Template" },
     { value: "development", label: "Development" },
   ];
-  const handleSelectChange = (value: string) => {
-    console.log("Selected value:", value);
-  };
+  const handleSelectChange = () => undefined;
 
   return (
     <ComponentCard title="Default Inputs">
@@ -40,7 +38,10 @@ export default function DefaultInputs() {
         <div>
           <Label>Password Input</Label>
           <div className="relative">
-            <Input type={showPassword ? "text" : "password"} placeholder="Enter your password" />
+            <Input
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+            />
             <button
               onClick={() => setShowPassword(!showPassword)}
               className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
@@ -59,9 +60,7 @@ export default function DefaultInputs() {
             id="date-picker"
             label="Date Picker Input"
             placeholder="Select a date"
-            onChange={(dates: any, currentDateString: string) => {
-              console.log({ dates, currentDateString });
-            }}
+            onChange={() => undefined}
           />
         </div>
       </div>

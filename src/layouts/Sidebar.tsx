@@ -18,9 +18,29 @@ const MENU_ITEMS = [
     icon: <GridIcon />,
   },
   {
+    label: "Danh mục sản phẩm",
+    path: PATH.CATEGORY,
+    icon: <GridIcon />,
+  },
+  {
     label: "Bài viết",
     path: PATH.BLOG,
     icon: <PiNewspaperClipping />,
+  },
+  {
+    label: "Quy trình sản xuất",
+    path: PATH.MANU_PROCESS,
+    icon: <GridIcon />,
+  },
+  {
+    label: "Policies & partnerships",
+    path: PATH.POLICY,
+    icon: <PiNewspaperClipping />,
+  },
+  {
+    label: "Đăng ký đối tác",
+    path: PATH.PARTNER_REQUESTS,
+    icon: <TableIcon />,
   },
   {
     label: "Component Preview",
@@ -78,7 +98,8 @@ const Sidebar: React.FC = () => {
               <NavLink
                 to={item.path}
                 className={({ isActive }) =>
-                  (isActive ? "menu-item-active" : "menu-item-inactive") + " menu-item group"
+                  (isActive ? "menu-item-active" : "menu-item-inactive") +
+                  " menu-item group"
                 }
               >
                 <span className="menu-item-icon-size">{item.icon}</span>

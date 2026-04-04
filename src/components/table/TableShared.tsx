@@ -1,12 +1,22 @@
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "../ui/table/index";
-import type { RowKeyType, TableAlign, TableProps } from "../../types/table.type";
-import Button from "../ui/button/Button";
-import { PlusIcon } from "../../assets/icons";
-import TableEmpty from "./TableEmpty";
 import { Pagination } from "antd";
-import TableLoadingAnimate from "./TableLoadingAnimate";
-import Input from "../form/input/InputField";
 import { CiSearch } from "react-icons/ci";
+import { PlusIcon } from "../../assets/icons";
+import type {
+  RowKeyType,
+  TableAlign,
+  TableProps,
+} from "../../types/table.type";
+import Input from "../form/input/InputField";
+import Button from "../ui/button/Button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableRow,
+} from "../ui/table/index";
+import TableEmpty from "./TableEmpty";
+import TableLoadingAnimate from "./TableLoadingAnimate";
 
 const getAlignClass = (align?: TableAlign) => {
   if (align === "center") return "text-center";
@@ -42,7 +52,11 @@ function TableShared<TRow>({
       <div className="flex items-center justify-between">
         <div>
           {buttonAdd.show && (
-            <Button size="md" onClick={buttonAdd.onAdd} endIcon={<PlusIcon className="size-4" />}>
+            <Button
+              size="md"
+              onClick={buttonAdd.onAdd}
+              endIcon={<PlusIcon className="size-4" />}
+            >
               {buttonAdd.text}
             </Button>
           )}
@@ -58,6 +72,8 @@ function TableShared<TRow>({
               type="text"
               id="tabelSearchbox"
               placeholder={search.placeholder}
+              value={search.searchValue}
+              onChange={(event) => search.onSearch(event.target.value)}
               className="xl:w-80! w-full! px-10"
             />
           </div>

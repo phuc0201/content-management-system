@@ -1,4 +1,5 @@
 import { Spin } from "antd";
+import type { FormEvent } from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -26,16 +27,20 @@ function validate(data: AuthData): AuthErrors {
 
 export default function SignInForm() {
   const navigate = useNavigate();
-  const [authData, setAuthData] = useState<AuthData>({ email: "", password: "" });
+  const [authData, setAuthData] = useState<AuthData>({
+    email: "",
+    password: "",
+  });
   const [errors, setErrors] = useState<AuthErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [signIn, { isLoading }] = useSignInMutation();
   const { setToken } = useAuth();
 
-  const handleChange = (field: keyof AuthData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAuthData((prev) => ({ ...prev, [field]: e.target.value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
-  };
+  const handleChange =
+    (field: keyof AuthData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      setAuthData((prev) => ({ ...prev, [field]: e.target.value }));
+      if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+    };
 
   const handleSignIn = async () => {
     const validationErrors = validate(authData);
@@ -51,9 +56,18 @@ export default function SignInForm() {
         navigate(PATH.ABOUT);
       }
     } catch (error) {
-      toast.error("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin và thử lại.");
-      error instanceof Error && console.error("Sign in failed:", error.message);
+      toast.error(
+        "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin và thử lại.",
+      );
+      if (error instanceof Error) {
+        console.error("Sign in failed:", error.message);
+      }
     }
+  };
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    void handleSignIn();
   };
 
   return (
@@ -69,15 +83,7 @@ export default function SignInForm() {
             </p>
           </div>
           <div>
-            <form
-              onSubmit={(e: any) => {
-                e.preventDefault();
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleSignIn();
-                } else handleSignIn();
-              }}
-            >
+            <form onSubmit={handleSubmit}>
               <div className="space-y-6">
                 <div>
                   <Label>
@@ -88,7 +94,11 @@ export default function SignInForm() {
                     value={authData.email}
                     onChange={handleChange("email")}
                   />
-                  {errors.email && <p className="mt-1 text-sm text-error-500">{errors.email}</p>}
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-error-500">
+                      {errors.email}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label>
@@ -113,7 +123,9 @@ export default function SignInForm() {
                     </span>
                   </div>
                   {errors.password && (
-                    <p className="mt-1 text-sm text-error-500">{errors.password}</p>
+                    <p className="mt-1 text-sm text-error-500">
+                      {errors.password}
+                    </p>
                   )}
                 </div>
                 <div>

@@ -1,7 +1,8 @@
 import type { QueryPagination, QueryParameter } from "../types/queryParameter";
 
 type Primitive = string | number | boolean | null | undefined | Date;
-type DotQuery = Record<string, Primitive>;
+type DotQueryValue = Primitive | Primitive[];
+type DotQuery = Record<string, DotQueryValue>;
 
 const getPaginationParams = ({
   current = 1,
@@ -13,16 +14,16 @@ const getPaginationParams = ({
   };
 };
 
-export function objectToDotQuery<T extends Record<string, any>>(obj: T): DotQuery {
+export function objectToDotQuery<T extends Record<string, unknown>>(obj: T): DotQuery {
   const result: DotQuery = {};
 
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value !== "object" || value === null || value instanceof Date) {
       result[key] = value as Primitive;
     } else if (Array.isArray(value)) {
-      result[key] = value as any;
+      result[key] = value as Primitive[];
     } else {
-      const nested = objectToDotQuery(value);
+      const nested = objectToDotQuery(value as Record<string, unknown>);
       for (const [nestedKey, nestedValue] of Object.entries(nested)) {
         result[`${key}.${nestedKey}`] = nestedValue;
       }
@@ -49,7 +50,7 @@ export function buildParams<T extends Record<string, unknown>>(
   if (order) params.order = order;
 
   if (filters) {
-    Object.assign(params, objectToDotQuery(filters));
+    Object.assign(params, objectToDotQuery(filters) as Record<string, Primitive>);
   }
 
   return params;

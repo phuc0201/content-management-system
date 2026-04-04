@@ -1,7 +1,16 @@
 import { Typography } from "antd";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { PlusIcon } from "../../assets/icons";
+import { SYSTEM_CONSTANT } from "../../constants/system.constant";
+import {
+  useCreateAdminSiteConfigMutation,
+  useDeleteAdminSiteConfigMutation,
+  useGetAdminSiteConfigListQuery,
+  useUpdateAdminSiteConfigMutation,
+  useUploadAdminSiteConfigImageMutation,
+} from "../../services/siteConfig.service";
+import type { SiteConfigItem } from "../../types/siteConfig.type";
 import UploadImageBox from "../common/UpdloadImageBox";
 import Input from "../form/input/InputField";
 import Button from "../ui/button/Button";
@@ -13,30 +22,52 @@ type IconItem = {
   id: string;
   name: string;
   link: string;
-  preview?: string;
+  imgUrl: string;
+  index: number;
 };
 
-// ─── MOCK DATA ───────────────────────────────────────────────────────────────
-const MOCK_ICONS: IconItem[] = [
-  { id: "1", name: "Facebook", link: "https://facebook.com/example" },
-  { id: "2", name: "Instagram", link: "https://instagram.com/example" },
-  { id: "3", name: "Zalo", link: "https://zalo.me/example" },
-];
+const normalize = (value?: string | null) =>
+  (value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-// Giả lập gọi API: delay 600ms rồi trả về thành công
-const fakeApiCall = () => new Promise<void>((resolve) => setTimeout(resolve, 600));
-// ─────────────────────────────────────────────────────────────────────────────
+const mapContactIcons = (items: SiteConfigItem[]): IconItem[] => {
+  const contactType = normalize(SYSTEM_CONSTANT.SITE_CONFIG_TYPE.CONTACT_ICON);
+
+  return items
+    .filter((item) => normalize(item.type).includes(contactType))
+    .sort((a, b) => a.index - b.index)
+    .map((item) => ({
+      id: item.id,
+      name: item.title || item.text || "",
+      link: item.link || "",
+      imgUrl: item.imgUrl || "",
+      index: item.index,
+    }));
+};
 
 export default function ContactIcon() {
+  const { data: siteConfigItems = [], isFetching } =
+    useGetAdminSiteConfigListQuery();
+  const [createContactIcon, { isLoading: isCreating }] =
+    useCreateAdminSiteConfigMutation();
+  const [updateContactIcon, { isLoading: isUpdating }] =
+    useUpdateAdminSiteConfigMutation();
+  const [deleteContactIcon, { isLoading: isDeleting }] =
+    useDeleteAdminSiteConfigMutation();
+  const [uploadContactIconImage, { isLoading: isUploading }] =
+    useUploadAdminSiteConfigImageMutation();
+
+  const icons = useMemo(
+    () => mapContactIcons(siteConfigItems),
+    [siteConfigItems],
+  );
+
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [link, setLink] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Khởi tạo bằng mock data thay vì mảng rỗng
-  const [icons, setIcons] = useState<IconItem[]>(MOCK_ICONS);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  const isSaving = isCreating || isUpdating || isDeleting || isUploading;
 
   function resetForm() {
     setName("");
@@ -51,30 +82,44 @@ export default function ContactIcon() {
       return;
     }
 
-    setIsSaving(true);
     try {
-      // TODO: thay fakeApiCall() bằng call API thực (POST / PUT)
-      await fakeApiCall();
-
+      let itemId = editingId;
       if (editingId) {
-        setIcons((prev) =>
-          prev.map((it) =>
-            it.id === editingId
-              ? {
-                  ...it,
-                  name,
-                  link,
-                  preview: file ? URL.createObjectURL(file) : it.preview,
-                }
-              : it,
-          ),
-        );
+        const current = icons.find((icon) => icon.id === editingId);
+
+        await updateContactIcon({
+          id: editingId,
+          body: {
+            title: name.trim(),
+            text: name.trim(),
+            link: link.trim() || null,
+            active: true,
+            index: current?.index ?? 1,
+          },
+        }).unwrap();
+
         toast.success("Đã cập nhật icon.");
       } else {
-        const id = String(Date.now());
-        const preview = file ? URL.createObjectURL(file) : undefined;
-        setIcons((prev) => [...prev, { id, name, link, preview }]);
+        const created = await createContactIcon({
+          type: SYSTEM_CONSTANT.SITE_CONFIG_TYPE.CONTACT_ICON,
+          title: name.trim(),
+          content: null,
+          text: name.trim(),
+          link: link.trim() || null,
+          imgUrl: null,
+          active: true,
+          index: icons.length + 1,
+        }).unwrap();
+
+        itemId = created.id;
         toast.success("Đã thêm icon.");
+      }
+
+      if (file && itemId) {
+        await uploadContactIconImage({
+          id: itemId,
+          file,
+        }).unwrap();
       }
 
       setOpen(false);
@@ -82,8 +127,6 @@ export default function ContactIcon() {
     } catch (err) {
       console.error(err);
       toast.error("Đã có lỗi xảy ra.");
-    } finally {
-      setIsSaving(false);
     }
   }
 
@@ -97,10 +140,14 @@ export default function ContactIcon() {
 
   function handleDelete(item: IconItem) {
     if (!confirm(`Xóa icon "${item.name}" ?`)) return;
-    // TODO: gọi API DELETE ở đây trước khi cập nhật state
-    setIcons((prev) => prev.filter((it) => it.id !== item.id));
-    if (item.preview) URL.revokeObjectURL(item.preview);
-    toast.info("Đã xóa icon.");
+
+    deleteContactIcon(item.id)
+      .unwrap()
+      .then(() => toast.success("Đã xóa icon."))
+      .catch((error) => {
+        console.error(error);
+        toast.error("Không thể xóa icon.");
+      });
   }
 
   return (
@@ -138,9 +185,13 @@ export default function ContactIcon() {
                 src="/public/images/empty-state-mail.png"
                 alt="empty"
                 className="mx-auto mb-3 h-12 w-12"
-                onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+                onError={(e) =>
+                  ((e.target as HTMLImageElement).style.display = "none")
+                }
               />
-              <p className="text-sm text-gray-500 dark:text-gray-400">Chưa có icon liên hệ nào</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Chưa có icon liên hệ nào
+              </p>
             </div>
           </div>
         ) : (
@@ -151,8 +202,12 @@ export default function ContactIcon() {
                 className="bg-white dark:bg-gray-800 rounded-md p-3 flex flex-col items-center justify-between shadow-sm"
               >
                 <div className="flex-1 flex flex-col items-center gap-2">
-                  {it.preview ? (
-                    <img src={it.preview} alt={it.name} className="h-12 w-12 object-contain" />
+                  {it.imgUrl ? (
+                    <img
+                      src={it.imgUrl}
+                      alt={it.name}
+                      className="h-12 w-12 object-contain"
+                    />
                   ) : (
                     <div className="h-12 w-12 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center text-gray-400">
                       Icon
@@ -172,6 +227,7 @@ export default function ContactIcon() {
                     size="sm"
                     onClick={() => startEdit(it)}
                     className="flex-1"
+                    disabled={isSaving || isFetching}
                   >
                     Sửa
                   </Button>
@@ -180,6 +236,7 @@ export default function ContactIcon() {
                     size="sm"
                     onClick={() => handleDelete(it)}
                     className="flex-1"
+                    disabled={isSaving || isFetching}
                   >
                     Xóa
                   </Button>
@@ -209,7 +266,7 @@ export default function ContactIcon() {
             <Input
               placeholder="Ví dụ: Facebook, Instagram..."
               value={name}
-              onChange={(e: any) => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
               className="w-full"
             />
           </div>
@@ -219,7 +276,10 @@ export default function ContactIcon() {
               Hình ảnh Icon
             </label>
             <div className="w-full">
-              <UploadImageBox onChange={(f: File | null) => setFile(f)} maxSizeMB={2} />
+              <UploadImageBox
+                onChange={(f: File | null) => setFile(f)}
+                maxSizeMB={2}
+              />
             </div>
           </div>
 
@@ -230,7 +290,7 @@ export default function ContactIcon() {
             <Input
               placeholder="Ví dụ: https://facebook.com/..."
               value={link}
-              onChange={(e: any) => setLink(e.target.value)}
+              onChange={(e) => setLink(e.target.value)}
               className="w-full"
             />
           </div>

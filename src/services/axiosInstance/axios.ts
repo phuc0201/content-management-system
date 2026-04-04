@@ -101,7 +101,7 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { PATH } from "../../constants/path.constant";
 import { clearAuth, getAccessToken } from "../../utils/authHelpers";
 
-const baseURL = import.meta.env.VITE_BASE_URL || "http://localhost:3000";
+const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 type RetryRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
@@ -110,6 +110,7 @@ type RetryRequestConfig = InternalAxiosRequestConfig & {
 const instance = axios.create({
   baseURL,
   timeout: 15000,
+  withCredentials: true,
 });
 
 function clearAuthAndRedirect() {

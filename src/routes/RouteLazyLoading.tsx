@@ -1,4 +1,4 @@
-import { lazy, type LazyExoticComponent, type ComponentType } from "react";
+import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 import { PATH } from "../constants/path.constant";
 
 export type BreadcrumbValue =
@@ -14,10 +14,7 @@ export interface AppRouteItem {
   children?: AppRouteItem[];
 }
 
-const BlogPage = lazy(() => import("../pages/Blog"));
-const AboutPage = lazy(() => import("../pages/About"));
-
-const appRoutes: AppRouteItem[] = [
+export const appRoutes: AppRouteItem[] = [
   {
     key: PATH.SITE_CONFIG,
     path: PATH.SITE_CONFIG,
@@ -26,18 +23,46 @@ const appRoutes: AppRouteItem[] = [
     component: lazy(() => import("../pages/SiteConfig")),
   },
   {
+    key: PATH.CATEGORY,
+    path: PATH.CATEGORY,
+    title: "Danh mục sản phẩm",
+    breadcrumb: "Danh mục sản phẩm",
+    component: lazy(() => import("../pages/Categories")),
+  },
+  {
     key: PATH.ABOUT,
     path: PATH.ABOUT,
     title: "Về chúng tôi",
     breadcrumb: "Về chúng tôi",
-    component: AboutPage,
+    component: lazy(() => import("../pages/About")),
   },
   {
     key: PATH.BLOG,
     path: PATH.BLOG,
     title: "Blog",
     breadcrumb: "Blog",
-    component: BlogPage,
+    component: lazy(() => import("../pages/Blog")),
+  },
+  {
+    key: PATH.MANU_PROCESS,
+    path: PATH.MANU_PROCESS,
+    title: "Quy trình sản xuất",
+    breadcrumb: "Quy trình sản xuất",
+    component: lazy(() => import("../pages/ManufacturingProcess")),
+  },
+  {
+    key: PATH.POLICY,
+    path: PATH.POLICY,
+    title: "Policies & partnerships",
+    breadcrumb: "Policies & partnerships",
+    component: lazy(() => import("../pages/Policies")),
+  },
+  {
+    key: PATH.PARTNER_REQUESTS,
+    path: PATH.PARTNER_REQUESTS,
+    title: "Đăng ký đối tác",
+    breadcrumb: "Đăng ký đối tác",
+    component: lazy(() => import("../pages/PartnerRequests")),
   },
   {
     key: PATH.PRODUCT,
@@ -77,5 +102,3 @@ const appRoutes: AppRouteItem[] = [
     component: lazy(() => import("../pages/ComponentPreview")),
   },
 ];
-
-export default appRoutes;

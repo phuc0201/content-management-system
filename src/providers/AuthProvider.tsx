@@ -1,9 +1,19 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useFetchAdminCurrentQuery } from "../services/auth.service";
-import { clearAuth, getAccessToken } from "../utils/authHelpers";
+import {
+  clearAuth,
+  getAccessToken,
+  setAccessToken,
+} from "../utils/authHelpers";
 
 type AuthContextType = {
-  user: any;
+  user: unknown;
   isAuthenticated: boolean;
   logout: () => void;
   setToken: (token: string | null) => void;
@@ -12,7 +22,9 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setToken] = useState<string | null>(getAccessToken() || null);
+  const [token, setTokenState] = useState<string | null>(
+    getAccessToken() || null,
+  );
   const {
     data: adminInfo,
     isError,
@@ -21,20 +33,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     skip: !token,
   });
 
-  const [user, setUser] = useState<any>(null);
+  const user = useMemo(
+    () => (isSuccess ? (adminInfo ?? true) : null),
+    [adminInfo, isSuccess],
+  );
 
-  useEffect(() => {
-    if (isSuccess) setUser(true);
-    if (isError || !token) {
-      setUser(null);
+  const setToken = (nextToken: string | null) => {
+    if (!nextToken) {
       clearAuth();
-      setToken(null);
+      setTokenState(null);
+      return;
     }
-  }, [adminInfo, isError, token]);
+    setAccessToken(nextToken);
+    setTokenState(nextToken);
+  };
 
   const logout = () => {
-    clearAuth();
-    setUser(null);
     setToken(null);
   };
 
@@ -42,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!token,
+        isAuthenticated: Boolean(token) && !isError,
         logout,
         setToken,
       }}

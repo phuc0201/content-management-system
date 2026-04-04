@@ -21,12 +21,12 @@ import { DropdownItem } from "../components/ui/dropdown/DropdownItem";
 import ResponsiveImage from "../components/ui/images/ResponsiveImage";
 import { ModalShared } from "../components/ui/modal";
 
-const BADGE_COLORS: Array<"primary" | "success" | "error" | "warning" | "info" | "light" | "dark"> =
-  ["primary", "success", "error", "warning", "info", "light", "dark"];
+const BADGE_COLORS: Array<
+  "primary" | "success" | "error" | "warning" | "info" | "light" | "dark"
+> = ["primary", "success", "error", "warning", "info", "light", "dark"];
 
 export default function ComponentPreview() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -37,13 +37,15 @@ export default function ComponentPreview() {
           Component Preview
         </h1>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Trang tong hop toan bo UI custom trong CMS, duoc nhom theo domain de test nhanh giao dien,
-          state va dark mode.
+          Trang tong hop toan bo UI custom trong CMS, duoc nhom theo domain de
+          test nhanh giao dien, state va dark mode.
         </p>
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white/90">Form Elements</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+          Form Elements
+        </h2>
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <DefaultInputs />
           <InputStates />
@@ -63,10 +65,17 @@ export default function ComponentPreview() {
           Controls & Data Display
         </h2>
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <ComponentCard title="Buttons" desc="Primary/outline, size va icon slots.">
+          <ComponentCard
+            title="Buttons"
+            desc="Primary/outline, size va icon slots."
+          >
             <div className="flex flex-wrap gap-3">
-              <Button startIcon={<PlusIcon className="size-4" />}>Create</Button>
-              <Button endIcon={<ArrowRightIcon className="size-4" />}>Continue</Button>
+              <Button startIcon={<PlusIcon className="size-4" />}>
+                Create
+              </Button>
+              <Button endIcon={<ArrowRightIcon className="size-4" />}>
+                Continue
+              </Button>
               <Button variant="outline">Outline</Button>
               <Button size="sm">Small</Button>
               <Button disabled>Disabled</Button>
@@ -88,7 +97,7 @@ export default function ComponentPreview() {
                     key={`solid-${color}`}
                     color={color}
                     variant="solid"
-                    startIcon={<CheckCircleIcon className="size-3.5" />} // Dùng thì tự đổi icon nghe mấy thằng lol
+                    startIcon={<CheckCircleIcon className="size-3.5" />}
                   >
                     {color}
                   </Badge>
@@ -97,7 +106,10 @@ export default function ComponentPreview() {
             </div>
           </ComponentCard>
 
-          <ComponentCard title="Avatars" desc="Size presets va trang thai online/offline/busy.">
+          <ComponentCard
+            title="Avatars"
+            desc="Size presets va trang thai online/offline/busy."
+          >
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-3">
                 <Avatar src={avatarDefault} size="xsmall" />
@@ -122,7 +134,11 @@ export default function ComponentPreview() {
                 title="Saved"
                 message="Data has been updated successfully."
               />
-              <Alert variant="error" title="Error" message="Something went wrong. Please retry." />
+              <Alert
+                variant="error"
+                title="Error"
+                message="Something went wrong. Please retry."
+              />
               <Alert
                 variant="warning"
                 title="Warning"
@@ -165,9 +181,14 @@ export default function ComponentPreview() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white/90">Overlay & Theme</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+          Overlay & Theme
+        </h2>
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <ComponentCard title="Dropdown & Modal" desc="Interactive overlay components.">
+          <ComponentCard
+            title="Dropdown & Modal"
+            desc="Interactive overlay components."
+          >
             <div className="flex flex-wrap items-center gap-3">
               <Button onClick={() => setIsModalOpen(true)}>Open Modal</Button>
               <div className="relative">
@@ -194,7 +215,9 @@ export default function ComponentPreview() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white/90">Media</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+          Media
+        </h2>
         <div className="space-y-6">
           <ComponentCard title="Images" desc="Responsive image layouts">
             <div className="space-y-5">
@@ -208,16 +231,11 @@ export default function ComponentPreview() {
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
-          setSaving(false);
         }}
         onSave={() => {
-          setSaving(true);
-          setTimeout(() => {
-            setIsModalOpen(false);
-            setSaving(false);
-          }, 1000);
+          setIsModalOpen(false);
         }}
-        isSaving={saving}
+        isSaving={false}
         title="Example Modal"
         children={<div>Nội dung customize để chỗ này</div>}
       />

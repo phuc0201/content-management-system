@@ -2,6 +2,14 @@ import { CheckOutlined, CloseOutlined, PlusOutlined } from "@ant-design/icons";
 import { Empty, Typography } from "antd";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { SYSTEM_CONSTANT } from "../../constants/system.constant";
+import {
+  useCreateAdminSiteConfigMutation,
+  useDeleteAdminSiteConfigMutation,
+  useGetAdminSiteConfigListQuery,
+  useUpdateAdminSiteConfigMutation,
+} from "../../services/siteConfig.service";
+import type { SiteConfigItem } from "../../types/siteConfig.type";
 import Input from "../form/input/InputField";
 import DeleteButton from "../table/DeleteButton";
 import EditButton from "../table/EditButton";
@@ -12,18 +20,42 @@ const { Title, Text } = Typography;
 interface Announcement {
   id: string;
   text: string;
+  index: number;
 }
 
+const normalize = (value?: string | null) =>
+  (value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const mapAnnouncements = (items: SiteConfigItem[]): Announcement[] => {
+  const topbarType = normalize(SYSTEM_CONSTANT.SITE_CONFIG_TYPE.TOPBAR);
+
+  return items
+    .filter((item) => normalize(item.type).includes(topbarType))
+    .sort((a, b) => a.index - b.index)
+    .map((item) => ({
+      id: item.id,
+      text: item.text || item.content || item.title || "",
+      index: item.index,
+    }));
+};
+
 export default function AnnouncementManager() {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([
-    { id: "1", text: "Free shipping on orders over $75 – Shop Now" },
-    { id: "2", text: "New arrivals every week – Explore the collection" },
-    { id: "3", text: "Use code WELCOME10 for 10% off your first order" },
-  ]);
+  const { data: siteConfigItems = [], isFetching } =
+    useGetAdminSiteConfigListQuery();
+  const [createAnnouncement, { isLoading: isCreating }] =
+    useCreateAdminSiteConfigMutation();
+  const [updateAnnouncement, { isLoading: isUpdating }] =
+    useUpdateAdminSiteConfigMutation();
+  const [deleteAnnouncement, { isLoading: isDeleting }] =
+    useDeleteAdminSiteConfigMutation();
+
+  const announcements = mapAnnouncements(siteConfigItems);
 
   const [newText, setNewText] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+
+  const isMutating = isCreating || isUpdating || isDeleting;
 
   const addAnnouncement = async () => {
     const trimmed = newText.trim();
@@ -32,21 +64,34 @@ export default function AnnouncementManager() {
       return;
     }
 
-    const tempId = Date.now().toString();
-    const newItem: Announcement = { id: tempId, text: trimmed };
-    setAnnouncements((prev) => [...prev, newItem]);
-    setNewText("");
-
     try {
+      await createAnnouncement({
+        type: SYSTEM_CONSTANT.SITE_CONFIG_TYPE.TOPBAR,
+        title: null,
+        content: trimmed,
+        text: trimmed,
+        link: null,
+        imgUrl: null,
+        active: true,
+        index: announcements.length + 1,
+      }).unwrap();
+
+      setNewText("");
       toast.success("Đã thêm thông báo.");
-    } catch (e) {
-      toast.warning("Thêm thông báo (chỉ UI) — API chưa cấu hình.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Không thể thêm thông báo.");
     }
   };
 
   const removeAnnouncement = async (id: string) => {
-    console.log("Xóa thông báo " + id);
-    toast.info("Xóa thông báo (chỉ UI) — API chưa cấu hình.");
+    try {
+      await deleteAnnouncement(id).unwrap();
+      toast.success("Đã xóa thông báo.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Không thể xóa thông báo.");
+    }
   };
 
   const startEdit = (a: Announcement) => {
@@ -62,16 +107,25 @@ export default function AnnouncementManager() {
       return;
     }
 
-    const prev = announcements;
-    setAnnouncements((p) => p.map((it) => (it.id === editingId ? { ...it, text: trimmed } : it)));
-    setEditingId(null);
-    setEditText("");
-
     try {
+      const currentItem = announcements.find((item) => item.id === editingId);
+
+      await updateAnnouncement({
+        id: editingId,
+        body: {
+          content: trimmed,
+          text: trimmed,
+          active: true,
+          index: currentItem?.index ?? 1,
+        },
+      }).unwrap();
+
+      setEditingId(null);
+      setEditText("");
       toast.success("Đã cập nhật thông báo.");
-    } catch (e) {
-      setAnnouncements(prev);
-      toast.warning("Cập nhật (chỉ UI) — API chưa cấu hình.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Không thể cập nhật thông báo.");
     }
   };
 
@@ -99,7 +153,12 @@ export default function AnnouncementManager() {
           aria-label="Nội dung thông báo mới"
           className="w-full flex-1"
         />
-        <Button size="md" onClick={addAnnouncement}>
+        <Button
+          size="md"
+          onClick={addAnnouncement}
+          loading={isMutating}
+          disabled={isFetching}
+        >
           <PlusOutlined /> Thêm
         </Button>
       </div>
@@ -141,14 +200,20 @@ export default function AnnouncementManager() {
                         <Button onClick={saveEdit}>
                           <CheckOutlined /> Lưu
                         </Button>
-                        <Button variant="outline" onClick={cancelEdit}>
+                        <Button
+                          variant="outline"
+                          onClick={cancelEdit}
+                          disabled={isMutating}
+                        >
                           <CloseOutlined /> Hủy
                         </Button>
                       </>
                     ) : (
                       <>
                         <EditButton onClick={() => startEdit(item)} />
-                        <DeleteButton onClick={() => removeAnnouncement(item.id)} />
+                        <DeleteButton
+                          onClick={() => void removeAnnouncement(item.id)}
+                        />
                       </>
                     )}
                   </div>
