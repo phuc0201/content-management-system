@@ -1,17 +1,12 @@
+import { IoSettingsOutline } from "react-icons/io5";
+import { PiNewspaperClipping } from "react-icons/pi";
 import { Link, NavLink } from "react-router";
 import { DocsIcon, GridIcon, TableIcon } from "../assets/icons";
-import { useSidebar } from "../providers/SidebarProvider";
 import LogoDefault from "../assets/logo_default.png";
-import { PiNewspaperClipping } from "react-icons/pi";
 import { PATH } from "../constants/path.constant";
-import { IoSettingsOutline } from "react-icons/io5";
+import { useSidebar } from "../providers/SidebarProvider";
 
 const MENU_ITEMS = [
-  {
-    label: "Cấu hình trang web",
-    path: PATH.SITE_CONFIG,
-    icon: <IoSettingsOutline />,
-  },
   {
     label: "Giới thiệu công ty",
     path: PATH.ABOUT,
@@ -31,6 +26,11 @@ const MENU_ITEMS = [
     label: "Component Preview",
     path: PATH.COMPONENT_PREVIEW,
     icon: <TableIcon />,
+  },
+  {
+    label: "Cấu hình trang web",
+    path: PATH.SITE_CONFIG,
+    icon: <IoSettingsOutline />,
   },
 ];
 

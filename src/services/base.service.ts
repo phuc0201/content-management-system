@@ -1,15 +1,15 @@
 import { createApi, type EndpointBuilder } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "./axiosInstance/axiosBaseQuery";
-import { buildParams } from "../utils/queryHelpers";
-import type { QueryParameter } from "../types/queryParameter";
 import { API_TAG } from "../constants/apiTag.constant";
+import type { QueryParameter } from "../types/queryParameter";
+import { buildParams } from "../utils/queryHelpers";
+import { axiosBaseQuery } from "./axiosInstance/axiosBaseQuery";
 
 type BaseQuery = ReturnType<typeof axiosBaseQuery>;
 type AppTagTypes = (typeof API_TAG)[keyof typeof API_TAG];
 
 export const baseApi = createApi({
   reducerPath: "cms",
-  baseQuery: axiosBaseQuery({ baseUrl: "/api/admin" }),
+  baseQuery: axiosBaseQuery({ baseUrl: "" }),
   tagTypes: Object.values(API_TAG),
   endpoints: () => ({}),
 });

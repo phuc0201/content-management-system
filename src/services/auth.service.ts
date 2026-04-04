@@ -13,10 +13,10 @@ export const authApi = baseApi.injectEndpoints({
         data: body,
       }),
       transformResponse: (response: ApiResponse<LoginResponse>) => {
-        const token = response?.data?.token;
+        const token = response?.data?.accessToken;
         if (token) setAccessToken(token);
 
-        return response?.data;
+        return response.data || { accessToken: "" };
       },
       transformErrorResponse: (error: AxiosBaseQueryError) => {
         console.error("loginAuth error:", error);

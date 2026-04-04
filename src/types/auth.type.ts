@@ -4,9 +4,5 @@ export type LoginRequest = {
 };
 
 export type LoginResponse = {
-  token: string;
-  admin: {
-    id: number;
-    email: string;
-  };
+  accessToken: string;
 };

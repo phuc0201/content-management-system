@@ -1,15 +1,18 @@
-export interface ApiResponse<T> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
-  data: T;
+  data: T | null;
   error?: {
-    code?: number;
+    code?: string;
     message?: string;
   };
   meta: {
-    pageSize?: number;
-    totalItems?: number;
-    totalPages?: number;
-    timestamp?: string;
-    path?: string;
+    timestamp: string;
+    path: string;
+    pagination?: {
+      page: number;
+      totalPages: number;
+      pageSize: number;
+      totalItems: number;
+    };
   };
 }

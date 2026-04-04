@@ -1,15 +1,12 @@
-import TableShared from "../../components/table/TableShared";
-import type { Product } from "../../types/product.type";
-import Badge from "../../components/ui/badge/Badge";
-import { useFetchProductsWithMockDataQuery } from "../../services/product.service";
-import {
-  ActionButtons,
-  type ActionDescriptor,
-  type ActionRegistry,
-} from "../../components/table/ActionButton";
+import { message, Space } from "antd";
 import { useNavigate } from "react-router-dom";
+import DeleteButton from "../../components/table/DeleteButton";
+import EditButton from "../../components/table/EditButton";
+import TableShared from "../../components/table/TableShared";
+import Badge from "../../components/ui/badge/Badge";
 import { PATH } from "../../constants/path.constant";
-import { message } from "antd";
+import { useFetchProductsWithMockDataQuery } from "../../services/product.service";
+import type { Product } from "../../types/product.type";
 
 export default function Products() {
   const navigate = useNavigate();
@@ -20,25 +17,6 @@ export default function Products() {
       pageSize: 10,
     },
   });
-
-  const productActions: ActionDescriptor<Product>[] = [
-    { key: "edit", label: "Sửa", confirm: false },
-    {
-      key: "delete",
-      label: "Xóa",
-      confirm: { title: "Xóa sản phẩm?", message: "Hành động này không thể hoàn tác." },
-    },
-  ];
-
-  const productActionRegistry: ActionRegistry<Product> = {
-    edit: ({ row }) => {
-      navigate(`${PATH.PRODUCT}/${row.id}`);
-    },
-    delete: async ({ row }) => {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      message.success(`Đã xóa sản phẩm ${row.name}`);
-    },
-  };
 
   const columns = [
     { key: "name", title: "Product" },
@@ -62,12 +40,20 @@ export default function Products() {
       title: "Actions",
       align: "center" as const,
       cellClassName: "w-37.5!",
-      render: (row: Product) => (
-        <ActionButtons<Product>
-          record={row}
-          actions={productActions}
-          registry={productActionRegistry}
-        />
+      render: (record: Product) => (
+        <Space>
+          <EditButton
+            onClick={() => {
+              navigate(PATH.PRODUCT + `/${record.id}`);
+            }}
+          />
+          <DeleteButton
+            onClick={async () => {
+              await new Promise((resolve) => setTimeout(resolve, 1500));
+              message.success(`Đã xóa sản phẩm ${record.name}`);
+            }}
+          />
+        </Space>
       ),
     },
   ];

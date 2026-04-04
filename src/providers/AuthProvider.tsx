@@ -13,14 +13,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(getAccessToken() || null);
-  const { data: adminInfo, isError } = useFetchAdminCurrentQuery(undefined, {
+  const {
+    data: adminInfo,
+    isError,
+    isSuccess,
+  } = useFetchAdminCurrentQuery(undefined, {
     skip: !token,
   });
 
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    if (adminInfo?.admin) setUser(adminInfo.admin);
+    if (isSuccess) setUser(true);
     if (isError || !token) {
       setUser(null);
       clearAuth();

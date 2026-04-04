@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { ArrowRightIcon, CheckCircleIcon, PlusIcon } from "../assets/icons";
 import avatarDefault from "../assets/avatar_default.png";
+import { ArrowRightIcon, CheckCircleIcon, PlusIcon } from "../assets/icons";
 import ComponentCard from "../components/common/ComponentCard";
 import CheckboxComponents from "../components/form/form-elements/CheckboxComponents";
 import DefaultInputs from "../components/form/form-elements/DefaultInputs";

@@ -45,8 +45,8 @@ export default function SignInForm() {
     }
     try {
       const data = await signIn(authData).unwrap();
-      setToken(data.token);
-      if (data?.token) {
+      setToken(data.accessToken);
+      if (data?.accessToken) {
         toast.success("Đăng nhập thành công!");
         navigate(PATH.ABOUT);
       }

@@ -1,7 +1,7 @@
+import "ckeditor5/ckeditor5-content.css";
 import { useRef } from "react";
 import RichTextEditor from "../../components/common/RichTextEditor";
 import Button from "../../components/ui/button/Button";
-import "ckeditor5/ckeditor5-content.css";
 
 export default function Blog() {
   const content = useRef("");

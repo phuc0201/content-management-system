@@ -1,7 +1,7 @@
 import { Link } from "react-router";
-import GridShape from "../components/common/GridShape";
-import pageNotFoundImageLightMode from "../assets/images/error/404.svg";
 import pageNotFoundImageDarkMode from "../assets/images/error/404-dark.svg";
+import pageNotFoundImageLightMode from "../assets/images/error/404.svg";
+import GridShape from "../components/common/GridShape";
 
 export default function NotFound() {
   return (

@@ -38,7 +38,7 @@ const TextArea: React.FC<TextareaProps> = ({
   }
 
   return (
-    <div className="relative">
+    <div className="relative h-full">
       <textarea
         placeholder={placeholder}
         rows={rows}
