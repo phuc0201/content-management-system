@@ -110,6 +110,7 @@ type RetryRequestConfig = InternalAxiosRequestConfig & {
 const instance = axios.create({
   baseURL,
   timeout: 15000,
+  withCredentials: true,
 });
 
 function clearAuthAndRedirect() {

@@ -16,7 +16,7 @@
     "@ckeditor/ckeditor5-upload": "^47.6.1",
     "@reduxjs/toolkit": "^2.11.2",
     "@tailwindcss/vite": "^4.2.1",
-    "antd": "^6.3.3",
+    "antd": "^6.3.5",
     "axios": "^1.13.6",
     "ckeditor5": "^47.6.1",
     "flatpickr": "^4.6.13",

@@ -100,11 +100,11 @@ const UploadImageBox: React.FC<UploadImageBoxProps> = ({ onChange, maxSizeMB = 5
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full flex-1">
       {!preview && !previews ? (
         <div
           {...getRootProps()}
-          className={`transition-all border border-dashed cursor-pointer rounded-xl
+          className={`transition-all border border-dashed cursor-pointer rounded-xl h-full
             ${
               isDragActive
                 ? "border-brand-500 bg-brand-50 dark:bg-gray-800 scale-[1.01]"

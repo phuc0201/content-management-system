@@ -2,10 +2,14 @@ import "ckeditor5/ckeditor5-content.css";
 import { useRef } from "react";
 import RichTextEditor from "../../components/common/RichTextEditor";
 import Button from "../../components/ui/button/Button";
+import { useGetBlogsQuery } from "../../services/blog.service";
 
 export default function Blog() {
   const content = useRef("");
   const previewRef = useRef<HTMLDivElement>(null);
+
+  const { data: blogRes } = useGetBlogsQuery({ pagination: { current: 1, pageSize: 10 } });
+  console.log("🚀 ~ Blog ~ blogRes:", blogRes);
 
   return (
     <div>

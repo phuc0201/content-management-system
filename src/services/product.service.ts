@@ -1,47 +1,44 @@
-import { API_TAG } from "../constants/apiTag.constant";
 import type { CreateProductDTO, Product, UpdateProductDTO } from "../types/product.type";
-import { baseApi, BaseFactory } from "./base.service";
-import { products } from "../dummy-data/products.data";
-import { buildParams } from "../utils/queryHelpers";
+import type { AxiosBaseQueryError } from "./axiosInstance/axiosBaseQuery";
+import { createBaseApiFactory } from "./axiosInstance/baseFactory";
 
-class ProductFactory extends BaseFactory<Product, CreateProductDTO, UpdateProductDTO> {
-  constructor() {
-    super("/products", API_TAG.PRODUCTS);
-  }
-}
+export const productService = createBaseApiFactory<
+  Product,
+  CreateProductDTO,
+  UpdateProductDTO,
+  "Product"
+>({
+  resource: "/products",
+  tag: "Product",
+  baseUrl: "admin",
+});
 
-const factory = new ProductFactory();
-
-export const productApi = baseApi.injectEndpoints({
+const productServiceExtra = productService.injectEndpoints({
+  overrideExisting: "throw",
   endpoints: (builder) => ({
-    ...factory.build(builder),
-    fetchProductsWithMockData: builder.query({
-      queryFn: (args) => {
-        const param = buildParams(args);
-        console.log("[PRODUCT] ~ PARAM: ", param);
-
+    updateImage: builder.mutation<Product, { id: string | number; files: File[] }>({
+      query: ({ id, files }) => {
+        const formData = new FormData();
+        files.forEach((file) => formData.append("file", file));
         return {
-          data: {
-            data: products,
-            meta: {
-              path: "/products",
-              totalItem: 20,
-              totalPage: 10,
-              pageSize: 10,
-              current: 1,
-            },
-          },
+          url: `products/${id}/imgs`,
+          method: "PATCH",
+          data: formData,
         };
+      },
+      transformErrorResponse: (error: AxiosBaseQueryError) => {
+        console.error("updateImage failed:", error);
+        return error;
       },
     }),
   }),
 });
 
 export const {
-  useFetchProductsWithMockDataQuery,
   useGetListQuery: useGetProductsQuery,
   useGetByIdQuery: useGetProductByIdQuery,
+  useRemoveMutation: useRemoveProductMutation,
   useCreateMutation: useCreateProductMutation,
   useUpdateMutation: useUpdateProductMutation,
-  useRemoveMutation: useRemoveProductMutation,
-} = productApi;
+  useUpdateImageMutation,
+} = productServiceExtra;
