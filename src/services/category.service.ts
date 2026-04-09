@@ -7,8 +7,9 @@ export const categoryService = createBaseApiFactory<
   UpdateCategoryDTO,
   "Category"
 >({
-  resource: "categories",
+  resource: "/categories",
   tag: "Category",
+  baseUrl: "admin",
 });
 
 export const {

@@ -1,9 +1,9 @@
-import { Outlet, Link, useMatches } from "react-router-dom";
-import Header from "./Header";
-import { SidebarProvider, useSidebar } from "../providers/SidebarProvider";
-import Sidebar from "./Sidebar";
 import { Breadcrumb } from "antd";
 import { GoHome } from "react-icons/go";
+import { Link, Outlet, useMatches } from "react-router-dom";
+import { SidebarProvider, useSidebar } from "../providers/SidebarProvider";
+import Header from "./Header";
+import Sidebar from "./Sidebar";
 
 type RouteHandle = {
   title?: string;
@@ -28,11 +28,9 @@ const LayoutContent: React.FC = () => {
 
   return (
     <div className="min-h-screen xl:flex">
-      <div>
-        <Sidebar />
-      </div>
+      <Sidebar />
       <div
-        className={`flex flex-col flex-1 transition-all duration-300 ease-in-out ${isExpanded || isHovered ? "lg:ml-72.5" : "lg:ml-22.5"} ${isMobileOpen ? "ml-0" : ""}`}
+        className={`flex flex-col flex-1 h-screen transition-all duration-300 ease-in-out ${isExpanded || isHovered ? "lg:ml-72.5" : "lg:ml-22.5"} ${isMobileOpen ? "ml-0" : ""}`}
       >
         <Header />
         <div className="w-full p-4 mx-auto md:p-6 dark:bg-gray-900 dark:text-gray-100 flex-1">

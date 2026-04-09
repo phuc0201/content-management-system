@@ -1,15 +1,15 @@
 import { Suspense } from "react";
 import { createBrowserRouter, type RouteObject } from "react-router-dom";
+import { PATH } from "../constants/path.constant";
+import MainLayout from "../layouts/MainLayout";
+import SignIn from "../pages/Auth/SignIn";
+import NotFound from "../pages/NotFound";
+import appRoutes, { type AppRouteItem } from "./RouteLazyLoading";
 import RouteTitleSync from "./RouteTitleSync";
 import ErrorBoundary from "./guards/ErrorBoundary";
-import MainLayout from "../layouts/MainLayout";
-import appRoutes, { type AppRouteItem } from "./RouteLazyLoading";
-import NotFound from "../pages/NotFound";
-import SignIn from "../pages/Auth/SignIn";
-import { PATH } from "../constants/path.constant";
 import ProtectedRoute from "./guards/ProtectedRoute";
 
-const PageLoader = () => <div>Loading.....</div>;
+const PageLoader = () => <div></div>;
 
 const RootRouteLayout = () => (
   <>

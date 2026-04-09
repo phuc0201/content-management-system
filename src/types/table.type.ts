@@ -10,6 +10,8 @@ export interface TableCol<TRow> {
   width?: number | string;
   headerClassName?: string;
   cellClassName?: string;
+  hideOnMobile?: boolean;
+  cardFullWidth?: boolean;
   render?: (row: TRow, index?: number) => ReactNode;
 }
 
@@ -57,4 +59,6 @@ export interface TableProps<TRow> {
   loading?: boolean;
 
   className?: string;
+
+  topRightComponent?: ReactNode;
 }

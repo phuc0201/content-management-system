@@ -31,8 +31,4 @@ const aboutExtraApi = aboutService.injectEndpoints({
   }),
 });
 
-export const {
-  useGetAboutQuery,
-  useCreateMutation: useCreateAboutMutation,
-  useUpdateMutation: useUpdateAboutMutation,
-} = aboutExtraApi;
+export const { useGetAboutQuery, useCreateMutation: useCreateAboutMutation } = aboutExtraApi;

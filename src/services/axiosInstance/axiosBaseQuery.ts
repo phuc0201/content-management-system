@@ -8,6 +8,7 @@ export type AxiosBaseQueryArgs = {
   data?: AxiosRequestConfig["data"];
   params?: AxiosRequestConfig["params"];
   headers?: AxiosRequestConfig["headers"];
+  useBaseUrl?: boolean;
 };
 
 export type AxiosBaseQueryError =
@@ -56,10 +57,10 @@ export const axiosBaseQuery =
       prepareHeaders?: (headers: AxiosRequestConfig["headers"]) => AxiosRequestConfig["headers"];
     } = { baseUrl: "", prepareHeaders: undefined },
   ): BaseQueryFn<AxiosBaseQueryArgs, unknown, AxiosBaseQueryError> =>
-  async ({ url, method, data, params, headers }) => {
+  async ({ url, method, data, params, headers, useBaseUrl }) => {
     try {
       const result = await axios({
-        url: (baseUrl || "") + url,
+        url: useBaseUrl !== false ? (baseUrl || "") + url : url,
         method,
         data,
         params,

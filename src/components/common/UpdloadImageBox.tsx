@@ -1,44 +1,66 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
-interface UploadImageBoxProps {
+type UploadImageBoxSingleProps = {
+  multiple?: false;
   onChange?: (file: File | null) => void;
+};
+
+type UploadImageBoxMultipleProps = {
+  multiple: true;
+  onChange?: (files: File[]) => void;
+};
+
+type UploadImageBoxProps = (UploadImageBoxSingleProps | UploadImageBoxMultipleProps) & {
   maxSizeMB?: number;
-  multiple?: boolean;
-}
+};
 
 interface PreviewFile {
   file: File;
   preview: string;
 }
 
-const UploadImageBox: React.FC<UploadImageBoxProps> = ({ onChange, maxSizeMB = 5 }) => {
+const UploadImageBox: React.FC<UploadImageBoxProps> = ({
+  onChange,
+  maxSizeMB = 5,
+  multiple = false,
+}) => {
   const [preview, setPreview] = useState<PreviewFile | null>(null);
   const [previews, setPreviews] = useState<PreviewFile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const releasePreviews = useCallback(() => {
+    if (preview?.preview) {
+      URL.revokeObjectURL(preview.preview);
+    }
+    if (previews?.length) {
+      previews.forEach((p) => URL.revokeObjectURL(p.preview));
+    }
+  }, [preview, previews]);
+
+  useEffect(() => {
+    return () => {
+      releasePreviews();
+    };
+  }, [releasePreviews]);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       setError(null);
       if (!acceptedFiles || acceptedFiles.length === 0) return;
 
-      if (acceptedFiles.length > 1) {
-        // multiple files selected
+      if (multiple) {
         const maxBytes = maxSizeMB * 1024 * 1024;
         const validFiles = acceptedFiles.filter((f) => f.size <= maxBytes);
         if (validFiles.length !== acceptedFiles.length) {
-          setError(`Some files exceed ${maxSizeMB}MB and were ignored.`);
+          setError(`Một số file vượt quá ${maxSizeMB}MB và đã bị bỏ qua.`);
         }
 
+        releasePreviews();
         const newPreviews = validFiles.map((f) => ({ file: f, preview: URL.createObjectURL(f) }));
-
-        // Revoke previous previews
-        if (previews?.length) previews.forEach((p) => URL.revokeObjectURL(p.preview));
-        if (preview?.preview) URL.revokeObjectURL(preview.preview);
-
         setPreviews(newPreviews);
         setPreview(null);
-        onChange?.(null);
+        (onChange as UploadImageBoxMultipleProps["onChange"])?.(validFiles);
         return;
       }
 
@@ -53,24 +75,19 @@ const UploadImageBox: React.FC<UploadImageBoxProps> = ({ onChange, maxSizeMB = 5
 
       const objectUrl = URL.createObjectURL(file);
 
-      // Revoke previous preview URL to avoid memory leaks
-      if (preview?.preview) {
-        URL.revokeObjectURL(preview.preview);
-      }
-      if (previews?.length) {
-        previews.forEach((p) => URL.revokeObjectURL(p.preview));
-        setPreviews(null);
-      }
+      releasePreviews();
+      setPreviews(null);
 
       const newPreview: PreviewFile = { file, preview: objectUrl };
       setPreview(newPreview);
-      onChange?.(file);
+      (onChange as UploadImageBoxSingleProps["onChange"])?.(file);
     },
-    [preview, onChange, maxSizeMB, previews],
+    [multiple, maxSizeMB, onChange, releasePreviews],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    multiple,
     accept: {
       "image/png": [],
       "image/jpeg": [],
@@ -81,16 +98,15 @@ const UploadImageBox: React.FC<UploadImageBoxProps> = ({ onChange, maxSizeMB = 5
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (preview?.preview) {
-      URL.revokeObjectURL(preview.preview);
-      setPreview(null);
-    }
-    if (previews?.length) {
-      previews.forEach((p) => URL.revokeObjectURL(p.preview));
-      setPreviews(null);
-    }
+    releasePreviews();
+    setPreview(null);
+    setPreviews(null);
     setError(null);
-    onChange?.(null);
+    if (multiple) {
+      (onChange as UploadImageBoxMultipleProps["onChange"])?.([]);
+    } else {
+      (onChange as UploadImageBoxSingleProps["onChange"])?.(null);
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -104,7 +120,7 @@ const UploadImageBox: React.FC<UploadImageBoxProps> = ({ onChange, maxSizeMB = 5
       {!preview && !previews ? (
         <div
           {...getRootProps()}
-          className={`transition-all border border-dashed cursor-pointer rounded-xl h-full
+          className={`transition-all border border-dashed cursor-pointer rounded-xl h-full flex flex-col justify-center
             ${
               isDragActive
                 ? "border-brand-500 bg-brand-50 dark:bg-gray-800 scale-[1.01]"
@@ -142,11 +158,15 @@ const UploadImageBox: React.FC<UploadImageBoxProps> = ({ onChange, maxSizeMB = 5
             </div>
 
             <h4 className="mb-3 font-semibold text-gray-800 text-theme-xl text-center dark:text-white/90">
-              {isDragActive ? "Thả ảnh vào đây" : "Kéo thả ảnh vào đây hoặc nhấp để chọn"}
+              {isDragActive
+                ? "Thả ảnh vào đây"
+                : multiple
+                  ? "Kéo thả nhiều ảnh vào đây hoặc nhấp để chọn"
+                  : "Kéo thả ảnh vào đây hoặc nhấp để chọn"}
             </h4>
 
             <span className="text-center mb-5 block w-full max-w-72 text-sm text-gray-500 dark:text-gray-400">
-              Hỗ trợ file PNG, JPG, WebP, SVG · Max {maxSizeMB}MB
+              Hỗ trợ file PNG, JPG, WebP, SVG · Max {maxSizeMB}MB{multiple ? " / file" : ""}
             </span>
 
             <span className="font-medium underline text-theme-sm text-brand-500 hover:text-brand-600 transition-colors">

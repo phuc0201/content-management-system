@@ -1,7 +1,8 @@
+import { AiOutlineInbox, AiOutlineProduct } from "react-icons/ai";
 import { IoSettingsOutline } from "react-icons/io5";
 import { PiNewspaperClipping } from "react-icons/pi";
 import { Link, NavLink } from "react-router";
-import { DocsIcon, GridIcon, TableIcon } from "../assets/icons";
+import { DocsIcon, TableIcon } from "../assets/icons";
 import LogoDefault from "../assets/logo_default.png";
 import { PATH } from "../constants/path.constant";
 import { useSidebar } from "../providers/SidebarProvider";
@@ -13,9 +14,14 @@ const MENU_ITEMS = [
     icon: <DocsIcon />,
   },
   {
+    label: "Danh mục sản phẩm",
+    path: PATH.CATEGORY,
+    icon: <AiOutlineInbox />,
+  },
+  {
     label: "Sản phẩm",
     path: PATH.PRODUCT,
-    icon: <GridIcon />,
+    icon: <AiOutlineProduct />,
   },
   {
     label: "Bài viết",

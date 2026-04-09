@@ -21,9 +21,12 @@ const productServiceExtra = productService.injectEndpoints({
         const formData = new FormData();
         files.forEach((file) => formData.append("file", file));
         return {
-          url: `products/${id}/imgs`,
+          url: `/products/${id}/imgs`,
           method: "PATCH",
           data: formData,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         };
       },
       transformErrorResponse: (error: AxiosBaseQueryError) => {

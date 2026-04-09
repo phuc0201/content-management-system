@@ -7,8 +7,8 @@ export interface Product extends Record<string, unknown> {
   salePrice?: number | null;
   summary?: string;
   thumbnailUrl?: string | null;
-  categoryId?: number;
   category?: string;
+  // category?: string;
   images?: ProductImage[];
   stock?: number;
   status?: string;
@@ -34,7 +34,7 @@ export interface CreateProductDTO {
 export type UpdateProductDTO = Partial<CreateProductDTO>;
 
 export interface ProductListQuery {
-  cateId?: number;
+  category?: number;
   offset?: number;
   limit?: number;
 }

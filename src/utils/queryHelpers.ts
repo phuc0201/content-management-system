@@ -37,12 +37,13 @@ export function buildParams<T extends Record<string, unknown>>(
 ): Record<string, Primitive> {
   const { keyword, search, order, filters, pagination } = query;
 
-  const { offset, limit } = getPaginationParams(pagination ?? { current: 1, pageSize: 10 });
+  const params: Record<string, Primitive> = {};
 
-  const params: Record<string, Primitive> = {
-    offset,
-    limit,
-  };
+  if (pagination) {
+    const { offset, limit } = getPaginationParams(pagination ?? { current: 1, pageSize: 10 });
+    params.offset = offset;
+    params.limit = limit;
+  }
 
   if (keyword) params.keyword = keyword;
   if (search) params.search = search;

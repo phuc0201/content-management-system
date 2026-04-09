@@ -188,6 +188,31 @@ layer(base);
   }
 }
 
+.dark .rich-text-editor .ck-editor__editable {
+  @apply bg-gray-900! text-gray-100 border-gray-700!;
+}
+
+.dark .rich-text-editor .ck-toolbar {
+  @apply bg-gray-900;
+}
+
+.dark .ck.ck-reset_all,
+.ck-reset_all *:not(.ck-reset_all-excluded *) {
+  @apply text-gray-300!;
+}
+
+.dark .rich-text-editor .ck-sticky-panel__content {
+  @apply border-gray-700!;
+}
+
+.dark .rich-text-editor .ck-toolbar__separator {
+  @apply bg-gray-800!;
+}
+
+.ant-drawer-body {
+  @apply p-0!;
+}
+
 @utility menu-item {
   @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm;
 }

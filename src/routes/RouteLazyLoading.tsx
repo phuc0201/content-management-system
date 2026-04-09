@@ -1,4 +1,4 @@
-import { lazy, type LazyExoticComponent, type ComponentType } from "react";
+import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 import { PATH } from "../constants/path.constant";
 
 export type BreadcrumbValue =
@@ -36,8 +36,31 @@ const appRoutes: AppRouteItem[] = [
     key: PATH.BLOG,
     path: PATH.BLOG,
     title: "Blog",
-    breadcrumb: "Blog",
+    breadcrumb: "Bài viết",
     component: BlogPage,
+    children: [
+      {
+        key: `${PATH.BLOG}-index`,
+        path: "",
+        title: "Danh sách",
+        breadcrumb: "Danh sách",
+        component: lazy(() => import("../pages/Blog/Blog")),
+      },
+      {
+        key: `${PATH.BLOG}-edit`,
+        path: ":id",
+        title: "Chỉnh sửa bài viết",
+        breadcrumb: "Chi tiết",
+        component: lazy(() => import("../pages/Blog/BlogDetails")),
+      },
+      {
+        key: `${PATH.BLOG}-create`,
+        path: "create",
+        title: "Tạo mới bài viết",
+        breadcrumb: "Tạo mới",
+        component: lazy(() => import("../pages/Blog/BlogDetails")),
+      },
+    ],
   },
   {
     key: PATH.PRODUCT,
@@ -68,6 +91,13 @@ const appRoutes: AppRouteItem[] = [
         component: lazy(() => import("../pages/Products/ProductDetails")),
       },
     ],
+  },
+  {
+    key: PATH.CATEGORY,
+    path: PATH.CATEGORY,
+    title: "Danh mục",
+    breadcrumb: "Danh mục",
+    component: lazy(() => import("../pages/Categories")),
   },
   {
     key: PATH.COMPONENT_PREVIEW,

@@ -1,15 +1,12 @@
-import { Typography } from "antd";
-import { useMemo, useState } from "react";
+import { Form, Typography } from "antd";
+import { useForm } from "antd/es/form/Form";
+import FormItem from "antd/es/form/FormItem";
+import { useLayoutEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import Input from "../../components/form/input/InputField";
 import TextArea from "../../components/form/input/TextArea";
 import Button from "../../components/ui/button/Button";
-import {
-  useCreateAboutMutation,
-  useGetAboutQuery,
-  useUpdateAboutMutation,
-} from "../../services/about.service";
-import type { CoreValueItem as AboutCoreValueItem } from "../../types/about.type";
+import { useCreateAboutMutation, useGetAboutQuery } from "../../services/about.service";
 
 const { Title, Text } = Typography;
 
@@ -22,7 +19,7 @@ interface AboutData {
   intro: string;
   vision: string;
   mission: string;
-  coreValues: CoreValueInputItem[];
+  coreValue: CoreValueInputItem[];
 }
 
 function genId() {
@@ -30,21 +27,17 @@ function genId() {
 }
 
 export default function AboutPage() {
+  const [form] = useForm();
   const { data: aboutContent, isFetching } = useGetAboutQuery();
   const [createAbout, { isLoading: isCreating }] = useCreateAboutMutation();
-  const [updateAbout, { isLoading: isUpdating }] = useUpdateAboutMutation();
-
-  const [introDraft, setIntroDraft] = useState<string | null>(null);
-  const [visionDraft, setVisionDraft] = useState<string | null>(null);
-  const [missionDraft, setMissionDraft] = useState<string | null>(null);
-  const [coreValuesDraft, setCoreValuesDraft] = useState<CoreValueInputItem[] | null>(null);
+  const isSaving = isCreating;
 
   const initialData = useMemo<AboutData>(
     () => ({
       intro: aboutContent?.intro ?? "",
       vision: aboutContent?.vision ?? "",
       mission: aboutContent?.mission ?? "",
-      coreValues:
+      coreValue:
         aboutContent?.coreValue?.map((item) => ({
           id: genId(),
           title: item.title,
@@ -53,156 +46,141 @@ export default function AboutPage() {
     [aboutContent],
   );
 
-  const data: AboutData = {
-    intro: introDraft ?? initialData.intro,
-    vision: visionDraft ?? initialData.vision,
-    mission: missionDraft ?? initialData.mission,
-    coreValues: coreValuesDraft ?? initialData.coreValues,
-  };
-
-  function addCoreValue() {
-    setCoreValuesDraft([...data.coreValues, { id: genId(), title: "" }]);
-  }
-
-  function updateCoreValue(id: string, title: string) {
-    setCoreValuesDraft(
-      data.coreValues.map((value) => (value.id === id ? { ...value, title } : value)),
-    );
-  }
-
-  function removeCoreValue(id: string) {
-    setCoreValuesDraft(data.coreValues.filter((value) => value.id !== id));
-  }
-
   async function handleSave() {
-    const intro = data.intro.trim();
-    const vision = data.vision.trim();
-    const mission = data.mission.trim();
-    const coreValue = data.coreValues
-      .map(
-        (item, index): AboutCoreValueItem => ({
-          title: item.title.trim(),
-          index: index + 1,
-        }),
-      )
-      .filter((item) => item.title.length > 0);
-
-    if (!intro || !vision || !mission) {
-      toast.warning("Vui lòng nhập đầy đủ giới thiệu, tầm nhìn và sứ mệnh.");
-      return;
-    }
-
-    const payload = {
-      intro,
-      vision,
-      mission,
-      coreValue,
-    };
-
     try {
-      if (aboutContent?.id) {
-        await updateAbout({
-          id: aboutContent.id,
-          body: payload,
-        }).unwrap();
-      } else {
-        await createAbout(payload).unwrap();
-      }
+      const values = await form.validateFields();
+      const payload = {
+        intro: values.intro,
+        vision: values.vision,
+        mission: values.mission,
+        coreValue: values.coreValue.map((item: CoreValueInputItem, index: number) => ({
+          title: item.title,
+          index,
+        })),
+      };
 
-      toast.success("Đã lưu thay đổi.");
+      // Làm cho một công ty nên không cần update vì chỉ có một about
+      if (aboutContent) {
+        await createAbout(payload).unwrap();
+        toast.success("Cập nhật thông tin giới thiệu thành công!");
+      }
     } catch (error) {
-      console.error(error);
-      toast.error("Lỗi khi lưu. Vui lòng thử lại.");
+      console.error("Validation failed:", error);
+      toast.error("Lưu thông tin giới thiệu thất bại. Vui lòng thử lại.");
     }
   }
 
-  const isSaving = isCreating || isUpdating;
+  useLayoutEffect(() => {
+    if (form && initialData) {
+      form.setFieldsValue(initialData);
+    }
+  }, [aboutContent, form]);
 
   return (
-    <div className="w-full space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <Title level={4}>Quản lý thông tin giới thiệu</Title>
-          <Text type="secondary" className="text-sm">
-            Sửa nội dung hiển thị trên trang giới thiệu.
-          </Text>
+    <section className="w-full space-y-6 rounded-xl border bg-white dark:bg-gray-800 dark:border-gray-700 p-6">
+      <Form form={form} layout="vertical" onFinish={handleSave}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <Title level={4}>Quản lý thông tin giới thiệu</Title>
+            <Text type="secondary" className="text-sm">
+              Sửa nội dung hiển thị trên trang giới thiệu.
+            </Text>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              loading={isSaving}
+              disabled={isFetching}
+            >
+              Lưu thay đổi
+            </Button>
+          </div>
         </div>
-        <div className="flex justify-end">
-          <Button
-            variant="primary"
-            size="md"
-            loading={isSaving}
-            onClick={() => void handleSave()}
-            disabled={isFetching}
+
+        <FormItem
+          label="Giới thiệu chung"
+          name="intro"
+          className="mb-6"
+          required
+          rules={[{ required: true, message: "Vui lòng nhập giới thiệu chung." }]}
+        >
+          <TextArea placeholder="Nhập nội dung" rows={6} disabled={isFetching} />
+        </FormItem>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormItem
+            label="Tầm nhìn"
+            name="vision"
+            className="mb-6"
+            required
+            rules={[{ required: true, message: "Vui lòng nhập tầm nhìn." }]}
           >
-            Lưu thay đổi
-          </Button>
-        </div>
-      </div>
+            <TextArea placeholder="Nhập nội dung" rows={5} disabled={isFetching} />
+          </FormItem>
 
-      <section className="rounded-xl border bg-white dark:bg-gray-800 dark:border-gray-700 p-6">
-        <h4 className="text-lg font-semibold mb-3">Giới thiệu chung</h4>
-        <TextArea
-          placeholder="Nhập nội dung"
-          value={data.intro}
-          onChange={setIntroDraft}
-          rows={6}
-          disabled={isFetching}
-        />
-      </section>
-
-      <section className="rounded-xl border bg-white dark:bg-gray-800 dark:border-gray-700 p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <h4 className="text-lg font-semibold mb-3">Tầm nhìn</h4>
-          <TextArea
-            placeholder="Nhập nội dung"
-            value={data.vision}
-            onChange={setVisionDraft}
-            rows={5}
-            disabled={isFetching}
-          />
-        </div>
-        <div>
-          <h4 className="text-lg font-semibold mb-3">Sứ mệnh</h4>
-          <TextArea
-            placeholder="Nhập nội dung"
-            value={data.mission}
-            onChange={setMissionDraft}
-            rows={5}
-            disabled={isFetching}
-          />
-        </div>
-      </section>
-
-      <section className="rounded-xl border bg-white dark:bg-gray-800 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-lg font-semibold">Giá trị cốt lõi</h4>
-          <Button size="md" onClick={addCoreValue} disabled={isFetching}>
-            Thêm giá trị
-          </Button>
+          <FormItem
+            label="Sứ mệnh"
+            name="mission"
+            className="mb-6"
+            required
+            rules={[{ required: true, message: "Vui lòng nhập sứ mệnh." }]}
+          >
+            <TextArea placeholder="Nhập nội dung" rows={5} disabled={isFetching} />
+          </FormItem>
         </div>
 
-        <div className="space-y-3">
-          {data.coreValues.map((value) => (
-            <div key={value.id} className="flex gap-3 items-center">
-              <Input
-                placeholder="Nhập nội dung"
-                value={value.title}
-                onChange={(event) => updateCoreValue(value.id, event.target.value)}
-                className="flex-1"
-                disabled={isFetching}
-              />
-              <button
-                className="text-red-500 border-red-200 border h-full px-4 py-2 rounded-lg hover:border-red-400 transition-colors"
-                onClick={() => removeCoreValue(value.id)}
-                disabled={isFetching}
-              >
-                Xóa
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
+        <Form.List name="coreValue">
+          {(fields, { add, remove }) => (
+            <section className="rounded-xl border bg-white dark:bg-gray-800 dark:border-gray-700 p-6 mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-lg font-semibold">Giá trị cốt lõi</h4>
+                <Button
+                  size="md"
+                  disabled={isFetching}
+                  onClick={() => add({ id: genId(), title: "" })}
+                >
+                  Thêm giá trị
+                </Button>
+              </div>
+
+              <div className="space-y-1">
+                {fields.map(({ key, name }) => (
+                  <div key={key} className="flex gap-3 items-start">
+                    <Form.Item name={[name, "id"]} hidden>
+                      <Input />
+                    </Form.Item>
+
+                    <Form.Item
+                      name={[name, "title"]}
+                      className="flex-1 mb-1!"
+                      rules={[{ required: true, message: "Vui lòng nhập giá trị cốt lõi." }]}
+                    >
+                      <Input placeholder="Nhập nội dung" disabled={isFetching} />
+                    </Form.Item>
+
+                    <button
+                      type="button"
+                      onClick={() => remove(name)}
+                      disabled={isFetching}
+                      className="text-red-500 border-red-200 border px-4 py-2 rounded-lg hover:border-red-400 transition-colors"
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                ))}
+
+                {fields.length === 0 && (
+                  <p className="text-gray-400 text-sm text-center py-4">
+                    Chưa có giá trị cốt lõi nào. Nhấn "Thêm giá trị" để bắt đầu.
+                  </p>
+                )}
+              </div>
+            </section>
+          )}
+        </Form.List>
+      </Form>
+    </section>
   );
 }

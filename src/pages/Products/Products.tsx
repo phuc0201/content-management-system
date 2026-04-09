@@ -1,16 +1,19 @@
 import { message, Space } from "antd";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import CategorySelect from "../../components/product/CategorySelect";
 import DeleteButton from "../../components/table/DeleteButton";
 import EditButton from "../../components/table/EditButton";
 import TableShared from "../../components/table/TableShared";
 import { PATH } from "../../constants/path.constant";
+import { useGetCategoriesQuery } from "../../services/category.service";
 import { useGetProductsQuery, useRemoveProductMutation } from "../../services/product.service";
 import type { Product } from "../../types/product.type";
 
 export default function Products() {
   const navigate = useNavigate();
 
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [paginationState, setPaginationState] = useState({
     current: 1,
     pageSize: 10,
@@ -20,6 +23,8 @@ export default function Products() {
   const { data: productResults, isLoading: productsLoading } = useGetProductsQuery({
     pagination: paginationState,
   });
+
+  const { data: categoryResults } = useGetCategoriesQuery({});
 
   const filteredProducts = useMemo(() => {
     const keyword = searchValue.trim().toLowerCase();
@@ -37,22 +42,34 @@ export default function Products() {
   const pageTotal = filteredProducts.length;
 
   const columns = [
+    {
+      key: "Image",
+      title: "Ảnh",
+      render: (record: Product) => {
+        const firstImage = record?.images?.[0];
+        const imageSrc =
+          import.meta.env.VITE_BASE_URL +
+          "/" +
+          (typeof firstImage === "string" ? firstImage : (firstImage?.url ?? ""));
+
+        return <img src={imageSrc} alt="" className="w-12.5 h-12.5 aspect-square object-cover" />;
+      },
+    },
     { key: "name", title: "Tên sản phẩm" },
     {
-      key: "Giá gốc",
-      title: "Price",
-      render: (row: Product) => (
-        <div>{row.price.toLocaleString("vi-VN", { style: "currency", currency: "VND" })}</div>
+      key: "Price",
+      title: "Giá gốc",
+      render: (record: Product) => (
+        <div>{record.price.toLocaleString("vi-VN", { style: "currency", currency: "VND" })}</div>
       ),
     },
-
     {
       key: "salePrice",
       title: "Giá khuyến mãi",
-      render: (row: Product) => (
+      render: (record: Product) => (
         <div>
-          {row.salePrice
-            ? row.salePrice.toLocaleString("vi-VN", { style: "currency", currency: "VND" })
+          {record.salePrice
+            ? record.salePrice.toLocaleString("vi-VN", { style: "currency", currency: "VND" })
             : "—"}
         </div>
       ),
@@ -61,9 +78,10 @@ export default function Products() {
       key: "actions",
       title: "Thao tác",
       align: "center" as const,
-      cellClassName: "w-37.5!",
+      cellClassName: "w-auto sm:w-37.5!",
+      cardFullWidth: true,
       render: (record: Product) => (
-        <Space>
+        <Space className="w-full">
           <EditButton
             onClick={() => {
               navigate(PATH.PRODUCT + `/${record.id}`);
@@ -107,7 +125,7 @@ export default function Products() {
         }}
         buttonAdd={{
           show: true,
-          text: "Thêm sản phẩm",
+          text: "Thêm",
           onAdd: () => {
             navigate(PATH.ADD_PRODUCT);
           },
@@ -121,6 +139,23 @@ export default function Products() {
             setSearchValue(value);
           },
         }}
+        topRightComponent={
+          <div className="md:p-0 p-4">
+            <CategorySelect
+              options={(categoryResults?.data ?? []).map((cat) => ({
+                label: cat.name,
+                value: String(cat.id),
+              }))}
+              placeholder="Chọn danh mục"
+              value={selectedCategory}
+              onChange={(value) => {
+                setSelectedCategory(value);
+                console.log(value);
+              }}
+              className="min-w-40! w-full sm:w-auto"
+            />
+          </div>
+        }
       />
     </div>
   );
