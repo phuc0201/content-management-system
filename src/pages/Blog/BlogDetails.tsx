@@ -1,6 +1,5 @@
 import { Form, Typography } from "antd";
 import { useForm } from "antd/es/form/Form";
-import FormItem from "antd/es/form/FormItem";
 import "ckeditor5/ckeditor5-content.css";
 import { useLayoutEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -34,7 +33,7 @@ export default function BlogDetails() {
   const [createBlog, { isLoading: creating }] = useCreateBlogMutation();
   const [updateBlog, { isLoading: updating }] = useUpdateBlogMutation();
 
-  const [uploadBlogImage, { isLoading: uploadingImage }] = useUploadBlogImageMutation();
+  const [uploadBlogImage] = useUploadBlogImageMutation();
 
   const loading = fetchingBlog || creating || updating;
 
@@ -46,11 +45,24 @@ export default function BlogDetails() {
       if (isCreateMode) {
         const result = await createBlog(payload).unwrap();
         if (result?.data) {
+          if (thumbnailUrl instanceof File) {
+            uploadBlogImage({ id: result.data.id, file: thumbnailUrl }).unwrap();
+          }
           navigate(PATH.BLOG_DETAIL.replace(":id", String(result?.data?.id)));
         }
         toast.success("Tạo bài viết thành công!");
       } else {
-        await updateBlog({ id: blogId, body: payload }).unwrap();
+        await updateBlog({
+          id: blogId,
+          body: {
+            ...payload,
+            ...(thumbnailUrl === null ? { thumbnailUrl: null } : {}),
+          },
+        }).unwrap();
+
+        if (thumbnailUrl instanceof File) {
+          uploadBlogImage({ id: blogId!, file: thumbnailUrl }).unwrap();
+        }
         toast.success("Cập nhật bài viết thành công!");
       }
     } catch (error) {
@@ -64,7 +76,7 @@ export default function BlogDetails() {
       const { thumbnailUrl, ...rest } = blogResult.data;
       form.setFieldsValue({
         ...rest,
-        thumbnailUrl: thumbnailUrl || null,
+        thumbnailUrl: thumbnailUrl ? import.meta.env.VITE_BASE_URL + thumbnailUrl : null,
       });
     }
   }, [blogResult, form]);
@@ -93,32 +105,31 @@ export default function BlogDetails() {
       </div>
 
       <section className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 space-y-4">
-        <FormItem
+        <Form.Item
           label="Tiêu đề"
           name="title"
           required
           rules={[{ required: true, message: "Vui lòng nhập tiêu đề bài viết." }]}
         >
           <Input placeholder="Nhập tiêu đề bài viết" disabled={loading} />
-        </FormItem>
+        </Form.Item>
 
-        <FormItem
+        <Form.Item
           label="Ảnh đại diện bài viết"
           name={"thumbnailUrl"}
-          required
-          rules={[{ required: true, message: "Vui lòng thêm ảnh đại diện" }]}
+          rules={[{ required: false, message: "Vui lòng thêm ảnh đại diện" }]}
         >
           <UploadImageBox />
-        </FormItem>
+        </Form.Item>
 
-        <FormItem
+        <Form.Item
           label="Nội dung"
           name="content"
           required
           rules={[{ required: true, message: "Vui lòng nhập nội dung bài viết." }]}
         >
           <RichTextEditor />
-        </FormItem>
+        </Form.Item>
       </section>
     </Form>
   );

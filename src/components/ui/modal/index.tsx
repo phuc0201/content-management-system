@@ -1,6 +1,6 @@
+import type { ModalProps as AntModalProps } from "antd";
 import { Modal } from "antd";
 import type { CSSProperties, ReactNode } from "react";
-import type { ModalProps as AntModalProps } from "antd";
 
 type ModalButtonSize = "sm" | "md";
 

@@ -1,13 +1,12 @@
 export interface CoreValueItem {
   title: string;
-  index: number;
 }
 
 export interface AboutContent extends Record<string, unknown> {
   intro: string;
   vision: string;
   mission: string;
-  coreValue: CoreValueItem[];
+  core_values: string[];
 }
 
 export interface AboutItem extends AboutContent {

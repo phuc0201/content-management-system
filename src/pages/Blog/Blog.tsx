@@ -42,9 +42,9 @@ export default function BlogList() {
       render: (record: Blog) =>
         record.thumbnailUrl ? (
           <img
-            src={String(record.thumbnailUrl)}
+            src={String(import.meta.env.VITE_BASE_URL + record.thumbnailUrl)}
             alt={String(record.title || "")}
-            className="w-12.5 h-12.5 aspect-square rounded object-cover"
+            className="h-12.5 aspect-video rounded object-cover"
           />
         ) : (
           <span>—</span>

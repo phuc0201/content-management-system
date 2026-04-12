@@ -188,25 +188,29 @@ layer(base);
   }
 }
 
-.dark .rich-text-editor .ck-editor__editable {
-  @apply bg-gray-900! text-gray-100 border-gray-700!;
+.leaflet-control-attribution {
+  display: none;
 }
 
-.dark .rich-text-editor .ck-toolbar {
-  @apply bg-gray-900;
+.rich-text-editor .ck-editor__editable {
+  @apply dark:bg-gray-900! dark:text-gray-100 dark:border-gray-700!;
 }
 
-.dark .ck.ck-reset_all,
+.rich-text-editor .ck-toolbar {
+  @apply dark:bg-gray-900;
+}
+
+.ck.ck-reset_all,
 .ck-reset_all *:not(.ck-reset_all-excluded *) {
-  @apply text-gray-300!;
+  @apply dark:text-gray-300!;
 }
 
-.dark .rich-text-editor .ck-sticky-panel__content {
-  @apply border-gray-700!;
+.rich-text-editor .ck-sticky-panel__content {
+  @apply dark:border-gray-700!;
 }
 
-.dark .rich-text-editor .ck-toolbar__separator {
-  @apply bg-gray-800!;
+.rich-text-editor .ck-toolbar__separator {
+  @apply dark:bg-gray-800!;
 }
 
 .ant-drawer-body {

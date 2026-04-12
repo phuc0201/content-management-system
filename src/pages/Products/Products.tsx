@@ -1,5 +1,5 @@
 import { message, Space } from "antd";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CategorySelect from "../../components/product/CategorySelect";
 import DeleteButton from "../../components/table/DeleteButton";
@@ -26,20 +26,7 @@ export default function Products() {
 
   const { data: categoryResults } = useGetCategoriesQuery({});
 
-  const filteredProducts = useMemo(() => {
-    const keyword = searchValue.trim().toLowerCase();
-    if (!keyword) return productResults?.data || [];
-
-    return (productResults?.data || []).filter((product) =>
-      String(product.name || "")
-        .toLowerCase()
-        .includes(keyword),
-    );
-  }, [productResults, searchValue]);
-
   const [removeProduct, { isLoading: removingProduct }] = useRemoveProductMutation();
-
-  const pageTotal = filteredProducts.length;
 
   const columns = [
     {
@@ -106,7 +93,7 @@ export default function Products() {
   return (
     <div className="select-none">
       <TableShared<Product>
-        dataSource={filteredProducts}
+        dataSource={productResults?.data || []}
         rowKey={"id"}
         columns={columns}
         loading={productsLoading || removingProduct}
@@ -114,7 +101,7 @@ export default function Products() {
           current: paginationState.current,
           pageSize: paginationState.pageSize,
           totalPage: 1,
-          totalItem: pageTotal,
+          totalItem: productResults?.meta?.pagination?.totalItems || 0,
           pageSizeOptions: [10, 20, 50],
           onChange: (page: number, pageSize: number) => {
             setPaginationState({

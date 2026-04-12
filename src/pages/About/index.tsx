@@ -6,42 +6,22 @@ import { toast } from "react-toastify";
 import Input from "../../components/form/input/InputField";
 import TextArea from "../../components/form/input/TextArea";
 import Button from "../../components/ui/button/Button";
-import { useCreateAboutMutation, useGetAboutQuery } from "../../services/about.service";
+import { useCreateAboutUpsertMutation, useGetAboutQuery } from "../../services/about.service";
+import type { AboutContent } from "../../types/about.type";
 
 const { Title, Text } = Typography;
 
-interface CoreValueInputItem {
-  id: string;
-  title: string;
-}
-
-interface AboutData {
-  intro: string;
-  vision: string;
-  mission: string;
-  coreValue: CoreValueInputItem[];
-}
-
-function genId() {
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
-}
-
 export default function AboutPage() {
   const [form] = useForm();
-  const { data: aboutContent, isFetching } = useGetAboutQuery();
-  const [createAbout, { isLoading: isCreating }] = useCreateAboutMutation();
-  const isSaving = isCreating;
+  const { data: aboutContent, isFetching, isLoading: isGetting } = useGetAboutQuery();
+  const [createAbout, { isLoading: isCreating }] = useCreateAboutUpsertMutation();
 
-  const initialData = useMemo<AboutData>(
+  const initialData = useMemo<AboutContent>(
     () => ({
       intro: aboutContent?.intro ?? "",
       vision: aboutContent?.vision ?? "",
       mission: aboutContent?.mission ?? "",
-      coreValue:
-        aboutContent?.coreValue?.map((item) => ({
-          id: genId(),
-          title: item.title,
-        })) ?? [],
+      core_values: aboutContent?.core_values || [],
     }),
     [aboutContent],
   );
@@ -53,13 +33,9 @@ export default function AboutPage() {
         intro: values.intro,
         vision: values.vision,
         mission: values.mission,
-        coreValue: values.coreValue.map((item: CoreValueInputItem, index: number) => ({
-          title: item.title,
-          index,
-        })),
+        core_values: values.core_values,
       };
 
-      // Làm cho một công ty nên không cần update vì chỉ có một about
       if (aboutContent) {
         await createAbout(payload).unwrap();
         toast.success("Cập nhật thông tin giới thiệu thành công!");
@@ -79,7 +55,7 @@ export default function AboutPage() {
   return (
     <section className="w-full space-y-6 rounded-xl border bg-white dark:bg-gray-800 dark:border-gray-700 p-6">
       <Form form={form} layout="vertical" onFinish={handleSave}>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-start justify-between mb-4">
           <div>
             <Title level={4}>Quản lý thông tin giới thiệu</Title>
             <Text type="secondary" className="text-sm">
@@ -91,8 +67,8 @@ export default function AboutPage() {
               type="submit"
               variant="primary"
               size="md"
-              loading={isSaving}
-              disabled={isFetching}
+              disabled={isFetching || isGetting || isCreating}
+              loading={isGetting || isFetching || isCreating}
             >
               Lưu thay đổi
             </Button>
@@ -106,7 +82,7 @@ export default function AboutPage() {
           required
           rules={[{ required: true, message: "Vui lòng nhập giới thiệu chung." }]}
         >
-          <TextArea placeholder="Nhập nội dung" rows={6} disabled={isFetching} />
+          <TextArea placeholder="Nhập nội dung" rows={6} disabled={isFetching || isGetting} />
         </FormItem>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -117,7 +93,7 @@ export default function AboutPage() {
             required
             rules={[{ required: true, message: "Vui lòng nhập tầm nhìn." }]}
           >
-            <TextArea placeholder="Nhập nội dung" rows={5} disabled={isFetching} />
+            <TextArea placeholder="Nhập nội dung" rows={5} disabled={isFetching || isGetting} />
           </FormItem>
 
           <FormItem
@@ -127,19 +103,20 @@ export default function AboutPage() {
             required
             rules={[{ required: true, message: "Vui lòng nhập sứ mệnh." }]}
           >
-            <TextArea placeholder="Nhập nội dung" rows={5} disabled={isFetching} />
+            <TextArea placeholder="Nhập nội dung" rows={5} disabled={isFetching || isGetting} />
           </FormItem>
         </div>
 
-        <Form.List name="coreValue">
+        <Form.List name="core_values">
           {(fields, { add, remove }) => (
             <section className="rounded-xl border bg-white dark:bg-gray-800 dark:border-gray-700 p-6 mb-6">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-start justify-between mb-3">
                 <h4 className="text-lg font-semibold">Giá trị cốt lõi</h4>
                 <Button
                   size="md"
-                  disabled={isFetching}
-                  onClick={() => add({ id: genId(), title: "" })}
+                  disabled={isFetching || isGetting}
+                  loading={isGetting || isFetching}
+                  onClick={() => add("")}
                 >
                   Thêm giá trị
                 </Button>
@@ -148,22 +125,18 @@ export default function AboutPage() {
               <div className="space-y-1">
                 {fields.map(({ key, name }) => (
                   <div key={key} className="flex gap-3 items-start">
-                    <Form.Item name={[name, "id"]} hidden>
-                      <Input />
-                    </Form.Item>
-
                     <Form.Item
-                      name={[name, "title"]}
+                      name={name}
                       className="flex-1 mb-1!"
                       rules={[{ required: true, message: "Vui lòng nhập giá trị cốt lõi." }]}
                     >
-                      <Input placeholder="Nhập nội dung" disabled={isFetching} />
+                      <Input placeholder="Nhập nội dung" disabled={isFetching || isGetting} />
                     </Form.Item>
 
                     <button
                       type="button"
                       onClick={() => remove(name)}
-                      disabled={isFetching}
+                      disabled={isFetching || isGetting}
                       className="text-red-500 border-red-200 border px-4 py-2 rounded-lg hover:border-red-400 transition-colors"
                     >
                       Xóa

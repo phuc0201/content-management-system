@@ -95,11 +95,10 @@ export default function ProductDetails() {
 
       const payload = {
         name: values.name.trim(),
-        slug: values.slug?.trim() || slugify(values.name),
         description: values.description,
         price: Number(values.price),
         salePrice: values.salePrice ? Number(values.salePrice) : null,
-        category: values.category,
+        categoryId: values.category,
         summary: values.summary,
         thumbnailUrl: null,
       };

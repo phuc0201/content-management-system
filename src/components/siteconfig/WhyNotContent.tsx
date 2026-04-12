@@ -1,5 +1,6 @@
 import { Typography } from "antd";
 import { useState } from "react";
+import ComponentCard from "../common/ComponentCard";
 import Input from "../form/input/InputField";
 import TextArea from "../form/input/TextArea";
 const { Title, Text } = Typography;
@@ -47,7 +48,7 @@ export default function zWhyNotContent() {
       </div>
 
       <div className="w-full">
-        <section className="rounded-2xl border border-slate-200 bg-white dark:bg-gray-800 dark:border-gray-700 p-4 shadow-sm">
+        <ComponentCard>
           <div className="space-y-6">
             {reasons.map((reason, index) => (
               <div
@@ -110,7 +111,7 @@ export default function zWhyNotContent() {
               </button>
             </div>
           </div>
-        </section>
+        </ComponentCard>
       </div>
     </div>
   );

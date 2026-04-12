@@ -1,8 +1,11 @@
+import { useEffect, useRef } from "react";
 import { AiOutlineInbox, AiOutlineProduct } from "react-icons/ai";
-import { IoSettingsOutline } from "react-icons/io5";
+import { GoWorkflow } from "react-icons/go";
+import { IoDocumentTextOutline, IoSettingsOutline } from "react-icons/io5";
+import { MdOutlineMail } from "react-icons/md";
 import { PiNewspaperClipping } from "react-icons/pi";
 import { Link, NavLink } from "react-router";
-import { DocsIcon, TableIcon } from "../assets/icons";
+import { DocsIcon } from "../assets/icons";
 import LogoDefault from "../assets/logo_default.png";
 import { PATH } from "../constants/path.constant";
 import { useSidebar } from "../providers/SidebarProvider";
@@ -12,6 +15,11 @@ const MENU_ITEMS = [
     label: "Giới thiệu công ty",
     path: PATH.ABOUT,
     icon: <DocsIcon />,
+  },
+  {
+    label: "Thông tin liên hệ",
+    path: PATH.CONTACT,
+    icon: <MdOutlineMail />,
   },
   {
     label: "Danh mục sản phẩm",
@@ -29,9 +37,14 @@ const MENU_ITEMS = [
     icon: <PiNewspaperClipping />,
   },
   {
-    label: "Component Preview",
-    path: PATH.COMPONENT_PREVIEW,
-    icon: <TableIcon />,
+    label: "Quy trình sản xuất",
+    path: PATH.MANU_PROCESS,
+    icon: <GoWorkflow />,
+  },
+  {
+    label: "Chính sách",
+    path: PATH.POLICY,
+    icon: <IoDocumentTextOutline />,
   },
   {
     label: "Cấu hình trang web",
@@ -41,10 +54,22 @@ const MENU_ITEMS = [
 ];
 
 const Sidebar: React.FC = () => {
-  const { isExpanded, isMobileOpen, isHovered } = useSidebar();
+  const { isExpanded, isMobileOpen, isHovered, closeSidebar } = useSidebar();
+  const sidebarRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (isMobileOpen && sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
+        closeSidebar();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMobileOpen, closeSidebar]);
 
   return (
     <aside
+      ref={sidebarRef}
       className={`fixed select-none mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200
         ${isExpanded || isMobileOpen ? "w-72.5" : isHovered ? "w-72.5" : "w-22.5"}
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
@@ -83,6 +108,7 @@ const Sidebar: React.FC = () => {
             <li key={item.label}>
               <NavLink
                 to={item.path}
+                onClick={() => isMobileOpen && closeSidebar()}
                 className={({ isActive }) =>
                   (isActive ? "menu-item-active" : "menu-item-inactive") + " menu-item group"
                 }

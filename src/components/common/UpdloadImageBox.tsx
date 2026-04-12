@@ -1,69 +1,59 @@
 import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
-type UploadImageBoxSingleProps = {
-  multiple?: false;
+type UploadImageBoxProps = {
+  value?: File | string | null;
   onChange?: (file: File | null) => void;
-};
-
-type UploadImageBoxMultipleProps = {
-  multiple: true;
-  onChange?: (files: File[]) => void;
-};
-
-type UploadImageBoxProps = (UploadImageBoxSingleProps | UploadImageBoxMultipleProps) & {
   maxSizeMB?: number;
 };
 
 interface PreviewFile {
-  file: File;
+  file: File | null;
   preview: string;
+  isObjectUrl: boolean;
 }
 
-const UploadImageBox: React.FC<UploadImageBoxProps> = ({
-  onChange,
-  maxSizeMB = 5,
-  multiple = false,
-}) => {
+const UploadImageBox = ({ value, onChange, maxSizeMB = 5 }: UploadImageBoxProps) => {
   const [preview, setPreview] = useState<PreviewFile | null>(null);
-  const [previews, setPreviews] = useState<PreviewFile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const releasePreviews = useCallback(() => {
-    if (preview?.preview) {
+  const releasePreview = useCallback(() => {
+    if (preview?.isObjectUrl) {
       URL.revokeObjectURL(preview.preview);
     }
-    if (previews?.length) {
-      previews.forEach((p) => URL.revokeObjectURL(p.preview));
-    }
-  }, [preview, previews]);
+  }, [preview]);
 
   useEffect(() => {
     return () => {
-      releasePreviews();
+      releasePreview();
     };
-  }, [releasePreviews]);
+  }, [releasePreview]);
+
+  useEffect(() => {
+    if (!value) {
+      releasePreview();
+      setPreview(null);
+      return;
+    }
+
+    if (typeof value === "string") {
+      if (preview?.preview === value && !preview.isObjectUrl) return;
+      releasePreview();
+      setPreview({ file: null, preview: value, isObjectUrl: false });
+      return;
+    }
+
+    if (value instanceof File) {
+      if (preview?.file === value) return;
+      const objectUrl = URL.createObjectURL(value);
+      releasePreview();
+      setPreview({ file: value, preview: objectUrl, isObjectUrl: true });
+    }
+  }, [preview, releasePreview, value]);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       setError(null);
-      if (!acceptedFiles || acceptedFiles.length === 0) return;
-
-      if (multiple) {
-        const maxBytes = maxSizeMB * 1024 * 1024;
-        const validFiles = acceptedFiles.filter((f) => f.size <= maxBytes);
-        if (validFiles.length !== acceptedFiles.length) {
-          setError(`Một số file vượt quá ${maxSizeMB}MB và đã bị bỏ qua.`);
-        }
-
-        releasePreviews();
-        const newPreviews = validFiles.map((f) => ({ file: f, preview: URL.createObjectURL(f) }));
-        setPreviews(newPreviews);
-        setPreview(null);
-        (onChange as UploadImageBoxMultipleProps["onChange"])?.(validFiles);
-        return;
-      }
-
       const file = acceptedFiles[0];
       if (!file) return;
 
@@ -74,20 +64,16 @@ const UploadImageBox: React.FC<UploadImageBoxProps> = ({
       }
 
       const objectUrl = URL.createObjectURL(file);
-
-      releasePreviews();
-      setPreviews(null);
-
-      const newPreview: PreviewFile = { file, preview: objectUrl };
-      setPreview(newPreview);
-      (onChange as UploadImageBoxSingleProps["onChange"])?.(file);
+      releasePreview();
+      setPreview({ file, preview: objectUrl, isObjectUrl: true });
+      onChange?.(file);
     },
-    [multiple, maxSizeMB, onChange, releasePreviews],
+    [maxSizeMB, onChange, releasePreview],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    multiple,
+    multiple: false,
     accept: {
       "image/png": [],
       "image/jpeg": [],
@@ -98,15 +84,10 @@ const UploadImageBox: React.FC<UploadImageBoxProps> = ({
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
-    releasePreviews();
+    releasePreview();
     setPreview(null);
-    setPreviews(null);
     setError(null);
-    if (multiple) {
-      (onChange as UploadImageBoxMultipleProps["onChange"])?.([]);
-    } else {
-      (onChange as UploadImageBoxSingleProps["onChange"])?.(null);
-    }
+    onChange?.(null);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -117,7 +98,7 @@ const UploadImageBox: React.FC<UploadImageBoxProps> = ({
 
   return (
     <div className="w-full flex-1">
-      {!preview && !previews ? (
+      {!preview ? (
         <div
           {...getRootProps()}
           className={`transition-all border border-dashed cursor-pointer rounded-xl h-full flex flex-col justify-center
@@ -131,7 +112,6 @@ const UploadImageBox: React.FC<UploadImageBoxProps> = ({
           <input {...getInputProps()} />
 
           <div className="flex flex-col items-center justify-center p-7 lg:p-10">
-            {/* Upload Icon */}
             <div className="mb-5 flex justify-center">
               <div
                 className={`flex h-17 w-17 items-center justify-center rounded-full transition-colors
@@ -158,15 +138,11 @@ const UploadImageBox: React.FC<UploadImageBoxProps> = ({
             </div>
 
             <h4 className="mb-3 font-semibold text-gray-800 text-theme-xl text-center dark:text-white/90">
-              {isDragActive
-                ? "Thả ảnh vào đây"
-                : multiple
-                  ? "Kéo thả nhiều ảnh vào đây hoặc nhấp để chọn"
-                  : "Kéo thả ảnh vào đây hoặc nhấp để chọn"}
+              {isDragActive ? "Thả ảnh vào đây" : "Kéo thả ảnh vào đây hoặc nhấp để chọn"}
             </h4>
 
             <span className="text-center mb-5 block w-full max-w-72 text-sm text-gray-500 dark:text-gray-400">
-              Hỗ trợ file PNG, JPG, WebP, SVG · Max {maxSizeMB}MB{multiple ? " / file" : ""}
+              Hỗ trợ file PNG, JPG, WebP, SVG · Max {maxSizeMB}MB
             </span>
 
             <span className="font-medium underline text-theme-sm text-brand-500 hover:text-brand-600 transition-colors">
@@ -175,25 +151,10 @@ const UploadImageBox: React.FC<UploadImageBoxProps> = ({
           </div>
         </div>
       ) : (
-        /* Preview State */
         <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-900">
-          {/* Image Preview */}
           <div className="relative group bg-gray-100 dark:bg-gray-800 max-h-72 h-72 overflow-hidden">
-            {preview ? (
-              <img src={preview.preview} alt="Preview" className="w-full max-h-72 object-contain" />
-            ) : (
-              <div className="p-4 overflow-auto">
-                <ul className="space-y-2">
-                  {previews?.map((p) => (
-                    <li key={p.preview} className="text-sm text-gray-700 dark:text-gray-300">
-                      {p.file.name} · {formatFileSize(p.file.size)}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <img src={preview.preview} alt="Preview" className="w-full max-h-72 object-contain" />
 
-            {/* Hover overlay with remove button */}
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <button
                 onClick={handleRemove}
@@ -218,23 +179,17 @@ const UploadImageBox: React.FC<UploadImageBoxProps> = ({
               </button>
             </div>
 
-            {/* Image details */}
             <div className="absolute bottom-0 left-0 p-4 w-full bg-linear-to-t from-black/40 to-transparent">
-              {preview ? (
-                <p className="text-sm text-white dark:text-gray-400">
-                  {preview.file.name} · {formatFileSize(preview.file.size)}
-                </p>
-              ) : (
-                <p className="text-sm text-white dark:text-gray-400">
-                  {previews?.length ?? 0} file(s) selected
-                </p>
-              )}
+              <p className="text-sm text-white dark:text-gray-400">
+                {preview.file
+                  ? `${preview.file.name} · ${formatFileSize(preview.file.size)}`
+                  : "Ảnh hiện tại"}
+              </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Error message */}
       {error && (
         <p className="mt-2 text-sm text-red-500 flex items-center gap-1">
           <svg

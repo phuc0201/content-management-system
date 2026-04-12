@@ -1,6 +1,7 @@
 import AnnouncementManager from "../../components/siteconfig/AnnouncementManager";
 import BrandIdentitySettings from "../../components/siteconfig/BrandIdentitySettings";
 import ContactIcon from "../../components/siteconfig/ContactIcon";
+import HeroSectionManager from "../../components/siteconfig/HeroSectionManager";
 import WhyNotContent from "../../components/siteconfig/WhyNotContent";
 
 export default function SiteConfig() {
@@ -10,6 +11,7 @@ export default function SiteConfig() {
       <AnnouncementManager />
       <WhyNotContent />
       <ContactIcon />
+      <HeroSectionManager />
     </div>
   );
 }

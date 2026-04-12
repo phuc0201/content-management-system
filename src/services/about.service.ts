@@ -1,4 +1,4 @@
-import type { AboutItem, CreateAboutDTO, UpdateAboutDTO } from "../types/about.type";
+import type { AboutContent, AboutItem, CreateAboutDTO, UpdateAboutDTO } from "../types/about.type";
 import type { ApiResponse } from "../types/apiResponse";
 import type { AxiosBaseQueryError } from "./axiosInstance/axiosBaseQuery";
 import { createBaseApiFactory } from "./axiosInstance/baseFactory";
@@ -9,7 +9,7 @@ export const aboutService = createBaseApiFactory<
   UpdateAboutDTO,
   "About"
 >({
-  resource: "/abouts",
+  resource: "/site-configs/about",
   tag: "About",
   baseUrl: "admin",
 });
@@ -19,7 +19,7 @@ const aboutExtraApi = aboutService.injectEndpoints({
   endpoints: (builder) => ({
     getAbout: builder.query<AboutItem | null, void>({
       query: () => ({
-        url: "/abouts",
+        url: "/site-configs/about",
         method: "GET",
       }),
       transformResponse: (response: ApiResponse<AboutItem>) => response?.data || null,
@@ -28,7 +28,19 @@ const aboutExtraApi = aboutService.injectEndpoints({
         return error;
       },
     }),
+    createAboutUpsert: builder.mutation<AboutContent, CreateAboutDTO>({
+      query: (data) => ({
+        url: "/site-configs/about/upsert",
+        method: "POST",
+        data,
+      }),
+      transformResponse: (response: ApiResponse<AboutContent>) => response?.data as AboutContent,
+      transformErrorResponse: (error: AxiosBaseQueryError) => {
+        console.error("createAboutUpsert failed:", error);
+        return error;
+      },
+    }),
   }),
 });
 
-export const { useGetAboutQuery, useCreateMutation: useCreateAboutMutation } = aboutExtraApi;
+export const { useGetAboutQuery, useCreateAboutUpsertMutation } = aboutExtraApi;

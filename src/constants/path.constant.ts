@@ -8,8 +8,15 @@ export const PATH = {
 
   CATEGORY: "/categories",
 
+  MANU_PROCESS: "/manu-process",
+
   PRODUCT: "/products",
   ADD_PRODUCT: "/products/create",
 
   COMPONENT_PREVIEW: "/component-preview",
+
+  POLICY: "/policies",
+  POLICY_DETAIL: "/policies/:id",
+
+  CONTACT: "/contact",
 };

@@ -1,3 +1,5 @@
+import type { Category } from "./category.type";
+
 export interface Product extends Record<string, unknown> {
   id: number;
   name: string;
@@ -7,8 +9,8 @@ export interface Product extends Record<string, unknown> {
   salePrice?: number | null;
   summary?: string;
   thumbnailUrl?: string | null;
-  category?: string;
-  // category?: string;
+  categoryId?: string;
+  category: Category;
   images?: ProductImage[];
   stock?: number;
   status?: string;
@@ -22,11 +24,10 @@ export interface ProductImage {
 
 export interface CreateProductDTO {
   name: string;
-  slug: string;
   description: string;
   price: number;
   salePrice?: number | null;
-  category: string;
+  categoryId: string;
   summary: string;
   thumbnailUrl?: string | null;
 }

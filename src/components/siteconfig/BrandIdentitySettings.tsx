@@ -57,7 +57,7 @@ const BrandIdentitySettings: React.FC = () => {
         </Text>
       </div>
 
-      <Form form={form} layout="vertical">
+      <Form form={form} layout="vertical" initialValues={{ primaryColor: "#78070e" }}>
         <Form.Item
           label={<span className="font-medium text-gray-700 dark:text-gray-200">Màu chính</span>}
           name="primaryColor"

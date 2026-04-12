@@ -53,8 +53,8 @@ const Input: FC<InputProps> = ({
         id={id}
         name={name}
         placeholder={placeholder}
-        value={value || ""}
-        onChange={onChange}
+        value={value ?? ""}
+        onChange={onChange ?? (() => {})}
         min={min}
         max={max}
         step={step}

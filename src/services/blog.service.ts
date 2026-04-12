@@ -1,6 +1,4 @@
-import type { ApiResponse } from "../types/apiResponse";
 import type { Blog, CreateBlogDTO, UpdateBlogDTO } from "../types/blog.type";
-import type { AxiosBaseQueryError } from "./axiosInstance/axiosBaseQuery";
 import { createBaseApiFactory } from "./axiosInstance/baseFactory";
 
 export const blogService = createBaseApiFactory<Blog, CreateBlogDTO, UpdateBlogDTO, "Blog">({
@@ -17,7 +15,7 @@ const blogServiceExtra = blogService.injectEndpoints({
         formData.append("file", file);
 
         return {
-          url: `/blogs/${id}/thumbnail`,
+          url: `/blogs/${id}/img`,
           method: "PATCH",
           data: formData,
           headers: {
@@ -26,27 +24,14 @@ const blogServiceExtra = blogService.injectEndpoints({
         };
       },
     }),
-
-    getBlogById: builder.query<ApiResponse<Blog>, string | number>({
-      query: (id) => ({
-        url: `/blogs/${id}`,
-        method: "GET",
-        useBaseUrl: false,
-      }),
-      transformErrorResponse: (error: AxiosBaseQueryError) => {
-        console.error("getById failed:", error);
-        return error;
-      },
-      providesTags: ["Blog"],
-    }),
   }),
 });
 
 export const {
   useGetListQuery: useGetBlogsQuery,
+  useGetByIdQuery: useGetBlogByIdQuery,
   useCreateMutation: useCreateBlogMutation,
   useUpdateMutation: useUpdateBlogMutation,
   useRemoveMutation: useRemoveBlogMutation,
   useUploadBlogImageMutation,
-  useGetBlogByIdQuery,
 } = blogServiceExtra;
