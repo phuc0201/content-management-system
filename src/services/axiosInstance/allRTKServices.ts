@@ -7,6 +7,7 @@ import { manuProcessService } from "../manuProcess.service";
 import { policyService } from "../policy.service";
 import { productService } from "../product.service";
 import { siteConfigService } from "../siteConfig.service";
+import { uploadImageService } from "../upload.service";
 
 export const allRTKServices = {
   productService,
@@ -18,4 +19,5 @@ export const allRTKServices = {
   policyService,
   goongService,
   siteConfigService,
+  uploadImageService,
 };

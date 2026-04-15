@@ -7,11 +7,17 @@ import EditButton from "../../components/table/EditButton";
 import TableShared from "../../components/table/TableShared";
 import { PATH } from "../../constants/path.constant";
 import { useGetCategoriesQuery } from "../../services/category.service";
-import { useGetProductsQuery, useRemoveProductMutation } from "../../services/product.service";
+import {
+  useCreateProductMutation,
+  useGetProductsQuery,
+  useRemoveProductMutation,
+} from "../../services/product.service";
 import type { Product } from "../../types/product.type";
 
 export default function Products() {
   const navigate = useNavigate();
+
+  const [createProduct, { isLoading: isCreatingProduct }] = useCreateProductMutation();
 
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [paginationState, setPaginationState] = useState({
@@ -20,7 +26,11 @@ export default function Products() {
   });
   const [searchValue, setSearchValue] = useState("");
 
-  const { data: productResults, isLoading: productsLoading } = useGetProductsQuery({
+  const {
+    data: productResults,
+    isLoading: productsLoading,
+    isFetching: fetchingProducts,
+  } = useGetProductsQuery({
     pagination: paginationState,
   });
 
@@ -90,13 +100,26 @@ export default function Products() {
     },
   ];
 
+  const handleCreateProduct = async () => {
+    try {
+      const { data: newProduct } = await createProduct({}).unwrap();
+      if (newProduct?.id) {
+        navigate(PATH.PRODUCT + `/${newProduct.id}`);
+      }
+    } catch (error: any) {
+      console.error(error);
+      message.error("Không thể tạo sản phẩm.");
+    }
+  };
+
   return (
     <div className="select-none">
       <TableShared<Product>
         dataSource={productResults?.data || []}
         rowKey={"id"}
         columns={columns}
-        loading={productsLoading || removingProduct}
+        loading={productsLoading}
+        fetching={fetchingProducts}
         pagination={{
           current: paginationState.current,
           pageSize: paginationState.pageSize,
@@ -113,9 +136,8 @@ export default function Products() {
         buttonAdd={{
           show: true,
           text: "Thêm",
-          onAdd: () => {
-            navigate(PATH.ADD_PRODUCT);
-          },
+          isLoading: isCreatingProduct,
+          onAdd: () => handleCreateProduct(),
         }}
         search={{
           enableSearch: true,

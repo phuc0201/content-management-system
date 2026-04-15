@@ -1,11 +1,10 @@
 import type { ApiResponse } from "../../types/apiResponse";
 import type { QueryParameter } from "../../types/queryParameter";
 import { buildParams } from "../../utils/queryHelpers";
-import type { AxiosBaseQueryError } from "./axiosBaseQuery";
 import type { TaggedBuilder } from "./baseFactory";
 
 export function buildBaseEndpoints<
-  TEntity extends Record<string, unknown>,
+  TEntity extends { id?: string | number },
   TCreateDTO,
   TUpdateDTO,
   TTag extends string,
@@ -17,11 +16,10 @@ export function buildBaseEndpoints<
         method: "GET",
         params: buildParams(args),
       }),
-      transformErrorResponse: (error: AxiosBaseQueryError) => {
-        console.error("getList failed:", error);
-        return error;
-      },
-      providesTags: [tag],
+      providesTags: (result) => [
+        { type: tag, id: "LIST" },
+        ...(result?.data ?? []).map((item) => ({ type: tag, id: item.id })),
+      ],
     }),
 
     getById: builder.query<ApiResponse<TEntity>, string | number>({
@@ -29,11 +27,7 @@ export function buildBaseEndpoints<
         url: `${resource}/${id}`,
         method: "GET",
       }),
-      transformErrorResponse: (error: AxiosBaseQueryError) => {
-        console.error("getById failed:", error);
-        return error;
-      },
-      providesTags: [tag],
+      // providesTags: (_result, _error, id) => [{ type: tag, id }],
     }),
 
     create: builder.mutation<ApiResponse<TEntity>, TCreateDTO>({
@@ -42,11 +36,7 @@ export function buildBaseEndpoints<
         method: "POST",
         data: body,
       }),
-      transformErrorResponse: (error: AxiosBaseQueryError) => {
-        console.error("create failed:", error);
-        return error;
-      },
-      invalidatesTags: [tag],
+      invalidatesTags: [{ type: tag, id: "LIST" }],
     }),
 
     update: builder.mutation<ApiResponse<TEntity>, { id: string | number; body: TUpdateDTO }>({
@@ -55,11 +45,7 @@ export function buildBaseEndpoints<
         method: "PATCH",
         data: body,
       }),
-      transformErrorResponse: (error: AxiosBaseQueryError) => {
-        console.error("update failed:", error);
-        return error;
-      },
-      invalidatesTags: [tag],
+      invalidatesTags: (_result, _error, { id }) => [{ type: tag, id: id }],
     }),
 
     remove: builder.mutation<ApiResponse<void>, string | number>({
@@ -67,11 +53,7 @@ export function buildBaseEndpoints<
         url: `${resource}/${id}`,
         method: "DELETE",
       }),
-      transformErrorResponse: (error: AxiosBaseQueryError) => {
-        console.error("remove failed:", error);
-        return error;
-      },
-      invalidatesTags: [tag],
+      invalidatesTags: (_result, _error, id) => [{ type: tag, id }],
     }),
   };
 }

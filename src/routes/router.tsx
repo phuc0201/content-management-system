@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import KeepAlive, { AliveScope } from "react-activation";
 import { createBrowserRouter, type RouteObject } from "react-router-dom";
 import { PATH } from "../constants/path.constant";
 import MainLayout from "../layouts/MainLayout";
@@ -9,15 +10,15 @@ import RouteTitleSync from "./RouteTitleSync";
 import ErrorBoundary from "./guards/ErrorBoundary";
 import ProtectedRoute from "./guards/ProtectedRoute";
 
-const PageLoader = () => <div></div>;
+const PageLoader = () => <div>Loading....</div>;
 
 const RootRouteLayout = () => (
-  <>
+  <AliveScope>
     <RouteTitleSync />
     <ProtectedRoute>
       <MainLayout />
     </ProtectedRoute>
-  </>
+  </AliveScope>
 );
 
 type RouteHandle = {
@@ -39,7 +40,13 @@ const mapAppRouteToReactRoute = (route: AppRouteItem): AppRouteObject => {
     element: (
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
-          <ComponentPage />
+          {route.keepAlive ? (
+            <KeepAlive cacheKey={route.key}>
+              <ComponentPage />
+            </KeepAlive>
+          ) : (
+            <ComponentPage />
+          )}
         </Suspense>
       </ErrorBoundary>
     ),

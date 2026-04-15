@@ -28,7 +28,11 @@ const EMPTY_FORM: CategoryFormState = {
 export default function CategoriesPage() {
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const { data: categoryResults, isLoading } = useGetCategoriesQuery({
+  const {
+    data: categoryResults,
+    isLoading,
+    isFetching,
+  } = useGetCategoriesQuery({
     pagination: {
       current: currentPage,
       pageSize: 10,
@@ -36,7 +40,7 @@ export default function CategoriesPage() {
   });
   const [createCategory, { isLoading: creating }] = useCreateCategoryMutation();
   const [updateCategory, { isLoading: updating }] = useUpdateCategoryMutation();
-  const [deleteCategory, { isLoading: deleting }] = useRemoveCategoryMutation();
+  const [deleteCategory] = useRemoveCategoryMutation();
 
   const [searchValue, setSearchValue] = useState("");
   const [isModalOpen, setModalOpen] = useState(false);
@@ -125,7 +129,8 @@ export default function CategoriesPage() {
         dataSource={categoryResults?.data || []}
         rowKey="id"
         columns={columns}
-        loading={isLoading || deleting}
+        loading={isLoading}
+        fetching={isFetching}
         buttonAdd={{
           show: true,
           text: "Thêm danh mục",

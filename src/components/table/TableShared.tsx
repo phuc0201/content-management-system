@@ -1,4 +1,4 @@
-import { Drawer, Pagination } from "antd";
+import { Drawer, Pagination, Spin } from "antd";
 import { useRef, useState } from "react";
 import { CiFilter, CiSearch } from "react-icons/ci";
 import { PlusIcon } from "../../assets/icons";
@@ -25,14 +25,18 @@ function TableShared<TRow>({
   columns = [],
   rowKey = "id" as RowKeyType<TRow>,
   search,
-  buttonAdd = { show: true, text: "Thêm mới", onAdd: () => {} },
+  buttonAdd = { show: true, text: "Thêm mới", isLoading: false, onAdd: () => {} },
   pagination,
   loading = false,
+  fetching = false,
   className = "",
   topRightComponent,
 }: TableProps<TRow>) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const filterBtnRef = useRef<HTMLDivElement | null>(null);
+
+  const isInitialLoading = loading;
+
   return (
     <div
       className={`space-y-4 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3 sm:p-6 ${className}`}
@@ -41,7 +45,12 @@ function TableShared<TRow>({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="w-full sm:w-auto">
           {buttonAdd.show && (
-            <Button size="md" onClick={buttonAdd.onAdd} endIcon={<PlusIcon className="size-4" />}>
+            <Button
+              size="md"
+              onClick={buttonAdd.onAdd}
+              endIcon={<PlusIcon className="size-4" />}
+              loading={buttonAdd.isLoading}
+            >
               {buttonAdd.text}
             </Button>
           )}
@@ -95,100 +104,99 @@ function TableShared<TRow>({
 
       {/* ── CARD VIEW (mobile & tablet < md) ── */}
       <div className="md:hidden space-y-3">
-        {loading && <TableLoadingAnimate />}
-
         {!loading && dataSource.length === 0 && <TableEmpty />}
 
-        {!loading &&
-          dataSource.map((row, rowIndex) => (
-            <div
-              key={getRowKey(row, rowKey) ?? rowIndex}
-              className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 space-y-2"
-            >
-              {columns.map((column) => {
-                if (column.hideOnMobile) return null;
+        {dataSource?.map((row, rowIndex) => (
+          <div
+            key={getRowKey(row, rowKey) ?? rowIndex}
+            className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 space-y-2"
+          >
+            {columns.map((column) => {
+              if (column.hideOnMobile) return null;
 
-                const value = column.render
-                  ? column.render(row, rowIndex)
-                  : String(row[column.key as keyof TRow] ?? "-");
+              const value = column.render
+                ? column.render(row, rowIndex)
+                : String(row[column.key as keyof TRow] ?? "-");
 
-                return (
-                  <div
-                    key={String(column.key)}
-                    className={`flex items-start justify-between gap-2 text-sm ${column.cardFullWidth ? "flex-col" : ""}`}
+              return (
+                <div
+                  key={String(column.key)}
+                  className={`flex items-start justify-between gap-2 text-sm ${column.cardFullWidth ? "flex-col" : ""}`}
+                >
+                  <span className="shrink-0 font-medium text-gray-800 dark:text-gray-400">
+                    {column.title}
+                  </span>
+                  <span
+                    className={`text-gray-800 dark:text-gray-200 ${column.cardFullWidth ? "w-full" : "text-right"}`}
                   >
-                    <span className="shrink-0 font-medium text-gray-800 dark:text-gray-400">
-                      {column.title}
-                    </span>
-                    <span
-                      className={`text-gray-800 dark:text-gray-200 ${column.cardFullWidth ? "w-full" : "text-right"}`}
-                    >
-                      {value}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+                    {value}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       {/* ── TABLE VIEW (desktop >= md) ── */}
       <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
-        <div className="overflow-x-auto">
-          <Table className="text-sm">
-            <TableHeader className="bg-gray-100 dark:bg-white/5 h-14 text-[16px]">
-              <TableRow>
-                {columns.map((column) => (
-                  <TableCell
-                    key={String(column.key)}
-                    isHeader
-                    className={`px-4 py-3 font-medium text-gray-700 dark:text-gray-300 ${getAlignClass(column.align)} ${column.headerClassName ?? ""}`}
-                  >
-                    {column.title}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {loading && (
+        <Spin spinning={fetching || loading} size="medium">
+          <div className="overflow-x-auto">
+            <Table className="text-sm">
+              <TableHeader className="bg-gray-100 dark:bg-white/5 h-14 text-[16px]">
                 <TableRow>
-                  <td colSpan={columns.length} className="px-0 py-0">
-                    <TableLoadingAnimate />
-                  </td>
+                  {columns.map((column) => (
+                    <TableCell
+                      key={String(column.key)}
+                      isHeader
+                      className={`px-4 py-3 font-medium text-gray-700 dark:text-gray-300 ${getAlignClass(column.align)} ${column.headerClassName ?? ""}`}
+                    >
+                      {column.title}
+                    </TableCell>
+                  ))}
                 </TableRow>
-              )}
+              </TableHeader>
 
-              {!loading &&
-                dataSource.length > 0 &&
-                dataSource.map((row, rowIndex) => (
-                  <TableRow
-                    key={getRowKey(row, rowKey) ?? rowIndex}
-                    className="border-t border-gray-100 dark:border-gray-800"
-                  >
-                    {columns.map((column) => (
-                      <TableCell
-                        key={String(column.key)}
-                        className={`px-4 py-3 text-gray-700 dark:text-gray-300 ${getAlignClass(column.align)} ${column.cellClassName ?? ""}`}
-                      >
-                        {column.render
-                          ? column.render(row, rowIndex)
-                          : String(row[column.key as keyof TRow] ?? "-")}
-                      </TableCell>
-                    ))}
+              <TableBody>
+                {isInitialLoading && (
+                  <TableRow>
+                    <td colSpan={columns.length} className="px-0 py-0">
+                      <TableLoadingAnimate />
+                    </td>
                   </TableRow>
-                ))}
+                )}
 
-              {!loading && dataSource.length === 0 && (
-                <TableRow>
-                  <td colSpan={columns.length} className="px-0 py-0">
-                    <TableEmpty />
-                  </td>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                {!isInitialLoading &&
+                  dataSource.length > 0 &&
+                  dataSource.map((row, rowIndex) => (
+                    <TableRow
+                      key={getRowKey(row, rowKey) ?? rowIndex}
+                      className="border-t border-gray-100 dark:border-gray-800"
+                    >
+                      {columns.map((column) => (
+                        <TableCell
+                          key={String(column.key)}
+                          className={`px-4 py-3 text-gray-700 dark:text-gray-300 ${getAlignClass(column.align)} ${column.cellClassName ?? ""}`}
+                        >
+                          {column.render
+                            ? column.render(row, rowIndex)
+                            : String(row[column.key as keyof TRow] ?? "-")}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+
+                {!isInitialLoading && dataSource.length === 0 && (
+                  <TableRow>
+                    <td colSpan={columns.length} className="px-0 py-0">
+                      <TableEmpty />
+                    </td>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </Spin>
       </div>
 
       {pagination && (

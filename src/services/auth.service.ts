@@ -12,7 +12,7 @@ export const authService = createBaseApiFactory<
   Record<string, unknown>,
   "Auth"
 >({
-  resource: "auth",
+  resource: "/auth",
   tag: "Auth",
 });
 

@@ -5,7 +5,11 @@ import svgr from "vite-plugin-svgr";
 
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      babel: {
+        plugins: ["react-activation/babel"],
+      },
+    }),
     tailwindcss(),
     svgr({
       svgrOptions: {

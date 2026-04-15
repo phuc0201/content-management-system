@@ -1,5 +1,15 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from "react";
+import ManuProcessStepList from "../components/manuProcess/ManuProcessStepList";
 import { PATH } from "../constants/path.constant";
+import AboutPage from "../pages/About";
+import BlogLayout from "../pages/Blog";
+import BlogList from "../pages/Blog/Blog";
+import Contact from "../pages/Contact";
+import PolicyLayout from "../pages/Policies";
+import Policies from "../pages/Policies/Policies";
+import ProductsLayout from "../pages/Products";
+import Products from "../pages/Products/Products";
+import SiteConfig from "../pages/SiteConfig";
 
 export type BreadcrumbValue =
   | string
@@ -10,25 +20,16 @@ export interface AppRouteItem {
   path: string;
   title: string;
   breadcrumb?: BreadcrumbValue;
-  component: LazyExoticComponent<ComponentType>;
+  component: LazyExoticComponent<ComponentType<any>> | ComponentType<any>;
+  keepAlive?: boolean;
   children?: AppRouteItem[];
 }
 
-const BlogPage = lazy(() => import("../pages/Blog"));
-const AboutPage = lazy(() => import("../pages/About"));
-const SiteConfigPage = lazy(() => import("../pages/SiteConfig"));
-const ProductsPage = lazy(() => import("../pages/Products"));
-const BlogListPage = lazy(() => import("../pages/Blog/Blog"));
 const BlogDetailsPage = lazy(() => import("../pages/Blog/BlogDetails"));
-const ProductsListPage = lazy(() => import("../pages/Products/Products"));
 const ProductDetailsPage = lazy(() => import("../pages/Products/ProductDetails"));
 const CategoriesPage = lazy(() => import("../pages/Categories"));
 const ComponentPreviewPage = lazy(() => import("../pages/ComponentPreview"));
-const ManufacturingProcessPage = lazy(() => import("../pages/ManufacturingProcess"));
-const PoliciesPage = lazy(() => import("../pages/Policies"));
-const PoliciesListPage = lazy(() => import("../pages/Policies/Policies"));
 const PolicyDetailsPage = lazy(() => import("../pages/Policies/PolicyDetails"));
-const ContactPage = lazy(() => import("../pages/Contact"));
 
 const appRoutes: AppRouteItem[] = [
   {
@@ -36,13 +37,15 @@ const appRoutes: AppRouteItem[] = [
     path: PATH.SITE_CONFIG,
     title: "Cấu hình trang web",
     breadcrumb: "Cấu hình trang web",
-    component: SiteConfigPage,
+    keepAlive: true,
+    component: SiteConfig,
   },
   {
     key: PATH.ABOUT,
     path: PATH.ABOUT,
     title: "Về chúng tôi",
     breadcrumb: "Về chúng tôi",
+    keepAlive: true,
     component: AboutPage,
   },
   {
@@ -50,14 +53,15 @@ const appRoutes: AppRouteItem[] = [
     path: PATH.BLOG,
     title: "Blog",
     breadcrumb: "Bài viết",
-    component: BlogPage,
+    component: BlogLayout,
     children: [
       {
         key: `${PATH.BLOG}-index`,
         path: "",
         title: "Danh sách",
         breadcrumb: "Danh sách",
-        component: BlogListPage,
+        keepAlive: true,
+        component: BlogList,
       },
       {
         key: `${PATH.BLOG}-edit`,
@@ -80,14 +84,15 @@ const appRoutes: AppRouteItem[] = [
     path: PATH.PRODUCT,
     title: "Sản phẩm",
     breadcrumb: "Sản phẩm",
-    component: ProductsPage,
+    component: ProductsLayout,
     children: [
       {
         key: `${PATH.PRODUCT}-index`,
         path: "",
         title: "Danh sách",
         breadcrumb: "Danh sách",
-        component: ProductsListPage,
+        component: Products,
+        keepAlive: true,
       },
       {
         key: `${PATH.PRODUCT}-edit`,
@@ -124,21 +129,23 @@ const appRoutes: AppRouteItem[] = [
     path: PATH.MANU_PROCESS,
     title: "Quy trình sản xuất",
     breadcrumb: "Quy trình sản xuất",
-    component: ManufacturingProcessPage,
+    keepAlive: true,
+    component: ManuProcessStepList,
   },
   {
     key: PATH.POLICY,
     path: PATH.POLICY,
     title: "Chính sách",
     breadcrumb: "Chính sách",
-    component: PoliciesPage,
+    component: PolicyLayout,
     children: [
       {
         key: `${PATH.POLICY}-index`,
         path: "",
         title: "Danh sách",
         breadcrumb: "Danh sách",
-        component: PoliciesListPage,
+        keepAlive: true,
+        component: Policies,
       },
       {
         key: `${PATH.POLICY}-details`,
@@ -154,7 +161,8 @@ const appRoutes: AppRouteItem[] = [
     path: PATH.CONTACT,
     title: "Liên hệ",
     breadcrumb: "Liên hệ",
-    component: ContactPage,
+    keepAlive: true,
+    component: Contact,
   },
 ];
 

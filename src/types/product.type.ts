@@ -23,13 +23,15 @@ export interface ProductImage {
 }
 
 export interface CreateProductDTO {
-  name: string;
-  description: string;
-  price: number;
+  name?: string;
+  description?: string;
+  price?: number;
   salePrice?: number | null;
-  categoryId: string;
-  summary: string;
+  categoryId?: number;
+  summary?: string;
   thumbnailUrl?: string | null;
+  isDraft?: boolean;
+  img?: string[];
 }
 
 export type UpdateProductDTO = Partial<CreateProductDTO>;

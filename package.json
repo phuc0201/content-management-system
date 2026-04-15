@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --mode development",
+    "dev": "vite --mode development --port 5174",
     "start": "vite --mode production --host",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
@@ -27,6 +27,7 @@
     "js-cookie": "^3.0.5",
     "leaflet": "^1.9.4",
     "react": "^19.2.4",
+    "react-activation": "^0.13.4",
     "react-dom": "^19.2.4",
     "react-dropzone": "^15.0.0",
     "react-error-boundary": "^6.1.1",

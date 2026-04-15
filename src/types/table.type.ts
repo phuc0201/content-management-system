@@ -51,12 +51,14 @@ export interface TableProps<TRow> {
   buttonAdd?: {
     show: boolean;
     text: string;
+    isLoading?: boolean;
     onAdd: () => void;
   };
 
   pagination?: TablePagination;
 
   loading?: boolean;
+  fetching?: boolean;
 
   className?: string;
 

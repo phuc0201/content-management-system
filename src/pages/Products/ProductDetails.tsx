@@ -1,4 +1,4 @@
-import { Form, Typography } from "antd";
+import { Form, Spin, Typography } from "antd";
 import { useForm, useWatch } from "antd/es/form/Form";
 import { useLayoutEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -14,40 +14,31 @@ import { useGetCategoriesQuery } from "../../services/category.service";
 import {
   useCreateProductMutation,
   useGetProductByIdQuery,
-  useUpdateImageMutation,
   useUpdateProductMutation,
 } from "../../services/product.service";
+import { useUploadImageMutation } from "../../services/upload.service";
+import type { CreateProductDTO } from "../../types/product.type";
 
 const { Title, Text } = Typography;
 
-type ProductFormState = {
+interface ProductFormTypes {
   name: string;
-  slug: string;
-  price: string;
-  salePrice?: string;
-  category: string;
-  summary: string;
   description: string;
-};
-
-const slugify = (value: string) =>
-  value
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
+  price: Number;
+  salePrice: Number;
+  categoryId: string;
+  summary: string;
+}
 
 export default function ProductDetails() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [form] = useForm<ProductFormState>();
+  const [form] = useForm<ProductFormTypes>();
   const descriptionValue = useWatch("description", form) ?? "";
 
   const productId = id ? Number(id) : null;
   const isCreateMode = !productId || Number.isNaN(productId);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   const [galleryFile, setGalleryFile] = useState<File | null>(null);
 
@@ -55,13 +46,14 @@ export default function ProductDetails() {
 
   const {
     data: productResult,
+    isLoading,
     isFetching: fetchingProduct,
     refetch,
   } = useGetProductByIdQuery(productId!, { skip: isCreateMode });
 
   const [createProduct, { isLoading: creating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: updating }] = useUpdateProductMutation();
-  const [uploadGalleryImage, { isLoading: uploading }] = useUpdateImageMutation();
+  const [uploadImage] = useUploadImageMutation();
 
   const categoryOptions = useMemo(
     () =>
@@ -79,10 +71,9 @@ export default function ProductDetails() {
     if (form) {
       form.setFieldsValue({
         name: p.name ?? "",
-        slug: p.slug ?? "",
-        price: p.price ? String(p.price) : "",
-        salePrice: p.salePrice ? String(p.salePrice) : "",
-        category: String(p.category ?? ""),
+        price: p.price ? Number(p.price) : "",
+        salePrice: p.salePrice ? Number(p.salePrice) : "",
+        categoryId: String(p.categoryId ?? ""),
         summary: p.summary ?? "",
         description: p.description ?? "",
       });
@@ -93,21 +84,18 @@ export default function ProductDetails() {
     try {
       const values = await form.validateFields();
 
-      const payload = {
+      const payload: CreateProductDTO = {
         name: values.name.trim(),
         description: values.description,
         price: Number(values.price),
         salePrice: values.salePrice ? Number(values.salePrice) : null,
-        categoryId: values.category,
+        categoryId: Number(values.categoryId),
         summary: values.summary,
         thumbnailUrl: null,
+        img: [],
       };
 
-      if (isCreateMode) {
-        const { data: created } = await createProduct(payload).unwrap();
-        toast.success("Đã tạo sản phẩm.");
-        navigate(`${PATH.PRODUCT}/${created?.id}`);
-      } else {
+      if (!isCreateMode) {
         await updateProduct({ id: productId, body: payload }).unwrap();
         toast.success("Đã cập nhật sản phẩm.");
       }
@@ -119,15 +107,21 @@ export default function ProductDetails() {
     }
   };
 
-  const handleUploadGallery = async () => {
-    if (!galleryFile || isCreateMode) {
+  const handleUploadGallery = async (file: File) => {
+    if (isCreateMode) {
       toast.warning("Hãy lưu sản phẩm trước khi tải ảnh gallery.");
       return;
     }
+
     try {
-      await uploadGalleryImage({ id: productId, files: [galleryFile] }).unwrap();
-      setGalleryFile(null);
-      await refetch();
+      const { data: result } = await uploadImage({
+        files: [file],
+        id: productId!,
+        type: "product",
+      }).unwrap();
+
+      setUploadedFile(file);
+      console.log("Upload result:", result);
       toast.success("Đã tải ảnh vào gallery.");
     } catch (error) {
       console.error(error);
@@ -135,10 +129,13 @@ export default function ProductDetails() {
     }
   };
 
-  const loading = fetchingProduct || creating || updating;
-
   return (
     <div className="space-y-6">
+      {fetchingProduct && (
+        <div className="fixed top-0 left-0 right-0 -bottom-20 bg-gray-100/50 z-1000 flex items-center justify-center">
+          <Spin spinning={fetchingProduct} size="large" />
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <Title level={4} className="mb-1!">
@@ -152,7 +149,7 @@ export default function ProductDetails() {
           <Button variant="outline" onClick={() => navigate(PATH.PRODUCT)}>
             Quay lại
           </Button>
-          <Button onClick={() => void handleSave()} loading={loading}>
+          <Button onClick={() => void handleSave()} loading={isLoading || updating || creating}>
             Lưu sản phẩm
           </Button>
         </div>
@@ -166,22 +163,22 @@ export default function ProductDetails() {
               name="name"
               rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm." }]}
             >
-              <Input placeholder="Nhập tên sản phẩm" />
+              <Input placeholder="Nhập tên sản phẩm" disabled={fetchingProduct} />
             </Form.Item>
 
-            <Form.Item label="Slug" name="slug">
+            {/* <Form.Item label="Slug" name="slug">
               <Input placeholder="de-khong-dau (tự tạo nếu để trống)" />
-            </Form.Item>
+            </Form.Item> */}
 
             <Form.Item
               label="Danh mục"
-              name="category"
+              name="categoryId"
               rules={[{ required: true, message: "Vui lòng chọn danh mục." }]}
             >
               <Select
                 options={categoryOptions}
                 placeholder="Chọn danh mục"
-                onChange={(value) => form.setFieldValue("category", value)}
+                onChange={(value) => form.setFieldValue("categoryId", value)}
               />
             </Form.Item>
 
@@ -191,41 +188,28 @@ export default function ProductDetails() {
                 name="price"
                 rules={[{ required: true, message: "Vui lòng nhập giá." }]}
               >
-                <Input type="number" placeholder="0" />
+                <Input type="number" placeholder="0" disabled={fetchingProduct} />
               </Form.Item>
 
               <Form.Item label="Giá giảm" name="salePrice">
-                <Input type="number" placeholder="0" />
+                <Input type="number" placeholder="0" disabled={fetchingProduct} />
               </Form.Item>
             </div>
 
             <Form.Item label="Tóm tắt" name="summary">
-              <TextArea
-                rows={4}
-                placeholder="Nhập tóm tắt sản phẩm"
-                onChange={(value) => form.setFieldValue("summary", value)}
-              />
+              <TextArea rows={4} placeholder="Nhập tóm tắt sản phẩm" disabled={fetchingProduct} />
             </Form.Item>
           </div>
 
           <div className="flex flex-col gap-4 justify-between rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
             <div className="flex-1 flex flex-col">
               <p className="text-sm text-gray-700 dark:text-gray-200 mb-2">Ảnh sản phẩm</p>
-              <UploadImageBox onChange={(file) => setGalleryFile(file)} maxSizeMB={2} />
+              <UploadImageBox
+                value={uploadedFile}
+                onChange={(file) => handleUploadGallery(file as File)}
+                maxSizeMB={2}
+              />
             </div>
-
-            {/* {!isCreateMode && (productResult?.data?.images?.length ?? 0) > 0 && (
-              <div className="grid grid-cols-3 gap-2">
-                {productResult?.data?.images?.map((image: ProductImage) => (
-                  <img
-                    key={String(image.id)}
-                    src={import.meta.env.VITE_BASE_URL + String(image.url)}
-                    alt={String(image.id)}
-                    className="w-full h-20 rounded-md object-cover border border-gray-200 dark:border-gray-700"
-                  />
-                ))}
-              </div>
-            )} */}
           </div>
         </section>
 
