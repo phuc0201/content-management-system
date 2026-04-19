@@ -1,6 +1,5 @@
 import type { LeafletEventHandlerFnMap } from "leaflet";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import { toast } from "react-toastify";
@@ -182,6 +181,7 @@ export default function Map({
         keyboard={true}
         style={{ height: "100%", width: "100%" }}
       >
+        <InvalidateOnMount />
         <RecenterMap center={center} />
         <MapInteractionHandler
           interactionMode={interactionMode}
@@ -272,4 +272,18 @@ export default function Map({
       )}
     </div>
   );
+}
+
+function InvalidateOnMount() {
+  const map = useMap();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [map]);
+
+  return null;
 }

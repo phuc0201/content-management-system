@@ -344,7 +344,7 @@ export default function Contact() {
           )}
         </div>
 
-        <div className="w-full h-150">
+        <div className="w-full h-150! min-h-150">
           <Map
             center={selectedPosition}
             markerPosition={selectedPosition}

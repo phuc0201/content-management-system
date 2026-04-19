@@ -109,7 +109,7 @@ type RetryRequestConfig = InternalAxiosRequestConfig & {
 
 const instance = axios.create({
   baseURL,
-  timeout: 15000,
+  timeout: 300000,
   withCredentials: true,
 });
 

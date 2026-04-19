@@ -1,15 +1,21 @@
-import { Space, message } from "antd";
+import { Space } from "antd";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import DeleteButton from "../../components/table/DeleteButton";
 import EditButton from "../../components/table/EditButton";
 import TableShared from "../../components/table/TableShared";
 import { PATH } from "../../constants/path.constant";
-import { useGetBlogsQuery, useRemoveBlogMutation } from "../../services/blog.service";
+import {
+  useCreateBlogMutation,
+  useGetBlogsQuery,
+  useRemoveBlogMutation,
+} from "../../services/blog.service";
 import type { Blog } from "../../types/blog.type";
 
 export default function BlogList() {
   const navigate = useNavigate();
+
   const [paginationState, setPaginationState] = useState({
     current: 1,
     pageSize: 10,
@@ -19,6 +25,8 @@ export default function BlogList() {
   const { data: blogResults, isLoading: blogsLoading } = useGetBlogsQuery({
     pagination: paginationState,
   });
+
+  const [createBlog, { isLoading: creating }] = useCreateBlogMutation();
 
   const [removeBlog, { isLoading: removingBlog }] = useRemoveBlogMutation();
 
@@ -47,7 +55,7 @@ export default function BlogList() {
             className="h-12.5 aspect-video rounded object-cover"
           />
         ) : (
-          <span>—</span>
+          <span className="text-sm text-gray-300 italic">Chưa có ảnh</span>
         ),
     },
     {
@@ -71,10 +79,10 @@ export default function BlogList() {
             onClick={async () => {
               try {
                 await removeBlog(record.id).unwrap();
-                message.success(`Đã xóa bài viết ${record.title}`);
+                toast.success(`Đã xóa bài viết ${record.title}`);
               } catch (error) {
                 console.error(error);
-                message.error("Không thể xóa bài viết.");
+                toast.error("Không thể xóa bài viết.");
               }
             }}
           />
@@ -82,6 +90,16 @@ export default function BlogList() {
       ),
     },
   ];
+
+  const onCreateBlog = async () => {
+    try {
+      const { data: blogCreated } = await createBlog({ title: "New Blog" }).unwrap();
+      if (blogCreated?.id) navigate(PATH.BLOG + `/${blogCreated.id}`);
+    } catch (error) {
+      console.error("Error creating blog:", error);
+      toast.error("Đã có lỗi xảy ra. Vui lòng thử lại.");
+    }
+  };
 
   return (
     <div className="select-none h-full">
@@ -106,9 +124,8 @@ export default function BlogList() {
         buttonAdd={{
           show: true,
           text: "Thêm",
-          onAdd: () => {
-            navigate(PATH.BLOG + "/create");
-          },
+          isLoading: creating,
+          onAdd: onCreateBlog,
         }}
         search={{
           enableSearch: true,

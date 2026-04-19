@@ -2,6 +2,7 @@
 layer(base);
 
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -186,6 +187,12 @@ layer(base);
   body {
     @apply relative font-normal font-outfit z-1 bg-gray-50;
   }
+}
+
+.product-summary-stretch .ant-form-item-control,
+.product-summary-stretch .ant-form-item-control-input,
+.product-summary-stretch .ant-form-item-control-input-content {
+  height: 100%;
 }
 
 .leaflet-control-attribution {

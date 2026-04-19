@@ -28,6 +28,7 @@ const aboutExtraApi = aboutService.injectEndpoints({
         return error;
       },
     }),
+
     createAboutUpsert: builder.mutation<AboutContent, CreateAboutDTO>({
       query: (data) => ({
         url: "/site-configs/about/upsert",

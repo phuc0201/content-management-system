@@ -3,14 +3,30 @@ export interface Blog extends Record<string, unknown> {
   title: string;
   thumbnailUrl?: string | null;
   shortDescription?: string;
+  images?: BlogImage[];
   content: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
+export interface BlogImage {
+  id?: string;
+  url?: string;
+  filePath?: string;
+  scope?: string;
+  productId?: number;
+  blogId?: number | null;
+  policyId?: number | null;
+  siteConfigId?: number | null;
+  alt?: string | null;
+  index?: number;
+  active?: boolean;
+  deleted?: boolean;
+}
+
 export interface CreateBlogDTO {
-  title: string;
-  content: string;
+  title?: string;
+  content?: string;
   shortDescription?: string;
   thumbnailUrl?: string | null;
 }

@@ -3,6 +3,7 @@ import { useForm } from "antd/es/form/Form";
 import FormItem from "antd/es/form/FormItem";
 import { useLayoutEffect, useMemo } from "react";
 import { toast } from "react-toastify";
+import ComponentCard from "../../components/common/ComponentCard";
 import Input from "../../components/form/input/InputField";
 import TextArea from "../../components/form/input/TextArea";
 import Button from "../../components/ui/button/Button";
@@ -53,7 +54,7 @@ export default function AboutPage() {
   }, [aboutContent, form]);
 
   return (
-    <section className="w-full space-y-6 rounded-xl border bg-white dark:bg-gray-800 dark:border-gray-700 p-6">
+    <ComponentCard>
       <Form form={form} layout="vertical" onFinish={handleSave}>
         <div className="flex items-start justify-between mb-4">
           <div>
@@ -154,6 +155,6 @@ export default function AboutPage() {
           )}
         </Form.List>
       </Form>
-    </section>
+    </ComponentCard>
   );
 }

@@ -7,7 +7,10 @@ export const uploadImageService = createApi({
   baseQuery: axiosBaseQuery({ baseUrl: "admin" }),
   tagTypes: ["UploadImage"],
   endpoints: (build) => ({
-    uploadImage: build.mutation<ApiResponse<any>, { files: File[]; id: number; type: string }>({
+    uploadImage: build.mutation<
+      ApiResponse<any>,
+      { files: File[]; id: number | string; type: string }
+    >({
       query: ({ files, id, type }) => {
         const formData = new FormData();
         formData.append("type", type);
@@ -19,8 +22,21 @@ export const uploadImageService = createApi({
           data: formData,
         };
       },
+      transformErrorResponse: (response: any) => {
+        return response.data || { message: "Error uploading image" };
+      },
+    }),
+
+    deleteImage: build.mutation<ApiResponse<any>, { id: string }>({
+      query: ({ id }) => ({
+        url: `/uploads/${id}`,
+        method: "DELETE",
+      }),
+      transformErrorResponse: (response: any) => {
+        return response.data || { message: "Error deleting image" };
+      },
     }),
   }),
 });
 
-export const { useUploadImageMutation } = uploadImageService;
+export const { useUploadImageMutation, useDeleteImageMutation } = uploadImageService;

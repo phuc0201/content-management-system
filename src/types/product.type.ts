@@ -14,12 +14,24 @@ export interface Product extends Record<string, unknown> {
   images?: ProductImage[];
   stock?: number;
   status?: string;
+  isDraft?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ProductImage {
-  id: string;
-  url: string;
-  index: number;
+  id?: string;
+  url?: string;
+  filePath?: string;
+  scope?: string;
+  productId?: number;
+  blogId?: number | null;
+  policyId?: number | null;
+  siteConfigId?: number | null;
+  alt?: string | null;
+  index?: number;
+  active?: boolean;
+  deleted?: boolean;
 }
 
 export interface CreateProductDTO {

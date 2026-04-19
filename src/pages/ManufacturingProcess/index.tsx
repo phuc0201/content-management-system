@@ -1,19 +1,55 @@
 import { Form, Typography } from "antd";
+import { useForm } from "antd/es/form/Form";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import ComponentCard from "../../components/common/ComponentCard";
 import Input from "../../components/form/input/InputField";
 import TextArea from "../../components/form/input/TextArea";
 import ManuProcessStepList from "../../components/manuProcess/ManuProcessStepList";
+import ManuProcessStepModal, {
+  type ManuProcessStepModalValue,
+} from "../../components/manuProcess/ManuProcessStepModal";
 import Button from "../../components/ui/button/Button";
-import type { ManuProcess } from "../../types/manuProcess.type";
+import {
+  useCreateManuProcessUpsertMutation,
+  useGetManuProcessQuery,
+} from "../../services/manuProcess.service";
+import { useUploadImageMutation } from "../../services/upload.service";
+import type { ManuProcess, ManuProcessStep } from "../../types/manuProcess.type";
 
 const { Title, Text } = Typography;
 
 export default function ManufacturingProcessPage() {
-  const [form] = Form.useForm<ManuProcess>();
+  const [openStepModal, setOpenStepModal] = useState<boolean>(false);
+  const [editingStepLocalId, setEditingStepLocalId] = useState<string | null>(null);
+  const [steps, setSteps] = useState<ManuProcessStep[]>([]);
+  const [form] = useForm();
+
+  const { data: manuProcess, isFetching, isLoading: isGetting } = useGetManuProcessQuery();
+
+  const [createManuProcessUpsert, { isLoading: isCreating }] = useCreateManuProcessUpsertMutation();
+  const [uploadImage, { isLoading: isUploadingImage }] = useUploadImageMutation();
+
+  const stepModalTitle = useMemo(
+    () => (editingStepLocalId ? "Chỉnh sửa bước quy trình" : "Thêm bước quy trình"),
+    [editingStepLocalId],
+  );
+
+  const editingStep = useMemo(
+    () => steps.find((step) => step.localId === editingStepLocalId) ?? null,
+    [editingStepLocalId, steps],
+  );
+
+  const applyServerManuData = (data: ManuProcess) => {
+    form.setFieldsValue({
+      title: data.title,
+      intro: data.intro,
+    });
+  };
 
   const handleSave = async (values: ManuProcess) => {
     try {
-      console.log("values: ", values);
+      // await createManuProcessUpsert(payload).unwrap();
       toast.success("Đã lưu quy trình sản xuất.");
     } catch (error) {
       console.error(error);
@@ -21,115 +57,91 @@ export default function ManufacturingProcessPage() {
     }
   };
 
+  const handleSaveStep = async (value: ManuProcessStepModalValue) => {
+    try {
+      toast.success("Đã lưu bước quy trình.");
+    } catch (error) {
+      console.error("save step failed:", error);
+      toast.error("Không thể lưu bước quy trình.");
+    }
+  };
+
+  useLayoutEffect(() => {
+    if (form && manuProcess) {
+      applyServerManuData(manuProcess);
+    }
+  }, [manuProcess, form]);
+
+  const handleDeleteStep = (localId: string) => {
+    setSteps((prev) => prev.filter((step) => step.localId !== localId));
+  };
+
   return (
-    <div className="space-y-4">
+    <ComponentCard>
       <Form form={form} layout="vertical" onFinish={handleSave}>
-        <Form.Item>
-          <div className="flex items-start justify-between pb-1!">
-            <div>
-              <Title level={4} className="mb-1!">
-                Quản lý quy trình sản xuất
-              </Title>
-              <Text type="secondary" className="text-sm">
-                Quản lý phần giới thiệu quy trình và danh sách các bước sản xuất.
-              </Text>
-            </div>
-            <div className="space-x-2">
-              <Button type="submit" loading={false}>
-                Lưu
-              </Button>
-            </div>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <Title level={4}>Quản lý quy trình sản xuất</Title>
+            <Text type="secondary" className="text-sm">
+              Cập nhật quy trình sản xuất để khách hàng hiểu rõ hơn về cách chúng tôi tạo ra sản
+              phẩm.
+            </Text>
           </div>
-        </Form.Item>
+          <div className="flex justify-end">
+            <Button type="submit" variant="primary" size="md" loading={isCreating}>
+              Lưu thay đổi
+            </Button>
+          </div>
+        </div>
 
-        {/* Title & Intro */}
         <Form.Item
-          label="Tiêu đề quy trình"
+          label="Tiêu đề hiển thị"
           name="title"
-          rules={[{ required: true, message: "Vui lòng nhập tiêu đề quy trình" }]}
+          rules={[{ required: true, message: "Vui lòng nhập tiêu đề hiển thị." }]}
         >
-          <Input placeholder="Nhập tiêu đề quy trình" />
+          <Input placeholder="VD: Quy trình sản xuất" />
         </Form.Item>
 
-        <Form.Item
-          label="Mô tả tổng quan"
-          name="intro"
-          rules={[{ required: true, message: "Vui lòng nhập mô tả tổng quan" }]}
-        >
-          <TextArea rows={4} placeholder="Nhập mô tả tổng quan" />
+        <Form.Item label="Mô tả" name="intro">
+          <TextArea rows={10} placeholder="Mô tả quy trình sản xuất" />
         </Form.Item>
 
-        {/* Steps */}
-        <section className="space-y-3">
-          <div className="flex items-start justify-between pb-1!">
-            <div>
-              <Title level={4} className="mb-1!">
-                Các bước trong quy trình sản xuất
-              </Title>
-              <Text type="secondary" className="text-sm">
-                Kéo thả để sắp xếp lại thứ tự các bước. Nhấn ✏️ để chỉnh sửa, 🗑️ để xóa bước.
-              </Text>
+        <Form.Item name="steps">
+          <section className="space-y-3">
+            <div className="flex items-start justify-between pb-1!">
+              <div>
+                <Title level={4} className="mb-1!">
+                  Các bước trong quy trình sản xuất
+                </Title>
+                <Text type="secondary" className="text-sm">
+                  Kéo thả để sắp xếp lại thứ tự các bước.
+                </Text>
+              </div>
+              <div className="space-x-2">
+                <Button variant="primary" onClick={() => {}}>
+                  Thêm bước
+                </Button>
+              </div>
             </div>
-            <div className="space-x-2">
-              <Button variant="outline" onClick={() => {}}>
-                Thêm bước
-              </Button>
-            </div>
-          </div>
 
-          <ManuProcessStepList />
+            <ManuProcessStepList
+              steps={steps}
+              onEdit={() => {}}
+              onDelete={handleDeleteStep}
+              onReorder={setSteps}
+            />
 
-          {/* <Form.List name="steps">
-            {(fields, { add, remove }) => (
-              <>
-                
-
-                {fields.length === 0 ? (
-                  <p className="italic text-sm text-gray-400">
-                    Chưa có bước nào trong quy trình sản xuất.
-                  </p>
-                ) : (
-                  fields.map((field, idx) => (
-                    <div
-                      key={field.key}
-                      className="rounded-lg border border-gray-200 p-4 dark:border-gray-700 space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium text-gray-700 dark:text-gray-200">
-                          Bước {idx + 1}
-                        </p>
-                        <Button size="sm" variant="outline" onClick={() => remove(field.name)}>
-                          Xóa
-                        </Button>
-                      </div>
-
-                      <Form.Item
-                        label="Tiêu đề"
-                        name={[field.name, "title"]}
-                        rules={[{ required: true, message: "Vui lòng nhập tiêu đề bước" }]}
-                      >
-                        <Input placeholder="Nhập tiêu đề bước" />
-                      </Form.Item>
-
-                      <Form.Item
-                        label="Nội dung"
-                        name={[field.name, "content"]}
-                        rules={[{ required: true, message: "Vui lòng nhập nội dung bước" }]}
-                      >
-                        <TextArea rows={3} placeholder="Nhập mô tả bước" />
-                      </Form.Item>
-
-                      <Form.Item label="Ảnh" name={[field.name, "imgUrl"]}>
-                        <UploadImageBox maxSizeMB={2} />
-                      </Form.Item>
-                    </div>
-                  ))
-                )}
-              </>
-            )}
-          </Form.List> */}
-        </section>
+            <ManuProcessStepModal
+              title={stepModalTitle}
+              open={openStepModal}
+              onClose={() => {}}
+              onSave={handleSaveStep}
+              initialValue={undefined}
+              isSaving={isCreating || isUploadingImage}
+            />
+          </section>
+        </Form.Item>
       </Form>
-    </div>
+    </ComponentCard>
   );
 }

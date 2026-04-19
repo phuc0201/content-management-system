@@ -1,22 +1,19 @@
 import { Form, Spin, Typography } from "antd";
 import { useForm, useWatch } from "antd/es/form/Form";
-import { useLayoutEffect, useMemo, useState } from "react";
+import "ckeditor5/ckeditor5.css";
+import { useLayoutEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import ComponentCard from "../../components/common/ComponentCard";
 import RichTextEditor from "../../components/common/RichTextEditor";
-import UploadImageBox from "../../components/common/UpdloadImageBox";
 import Input from "../../components/form/input/InputField";
 import TextArea from "../../components/form/input/TextArea";
 import Select from "../../components/form/Select";
+import ProductUploadImgBox from "../../components/product/ProductUploadImgBox";
 import Button from "../../components/ui/button/Button";
 import { PATH } from "../../constants/path.constant";
 import { useGetCategoriesQuery } from "../../services/category.service";
-import {
-  useCreateProductMutation,
-  useGetProductByIdQuery,
-  useUpdateProductMutation,
-} from "../../services/product.service";
-import { useUploadImageMutation } from "../../services/upload.service";
+import { useGetProductByIdQuery, useUpdateProductMutation } from "../../services/product.service";
 import type { CreateProductDTO } from "../../types/product.type";
 
 const { Title, Text } = Typography;
@@ -38,9 +35,6 @@ export default function ProductDetails() {
 
   const productId = id ? Number(id) : null;
   const isCreateMode = !productId || Number.isNaN(productId);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-
-  const [galleryFile, setGalleryFile] = useState<File | null>(null);
 
   const { data: categoryResults } = useGetCategoriesQuery({});
 
@@ -48,12 +42,9 @@ export default function ProductDetails() {
     data: productResult,
     isLoading,
     isFetching: fetchingProduct,
-    refetch,
   } = useGetProductByIdQuery(productId!, { skip: isCreateMode });
 
-  const [createProduct, { isLoading: creating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: updating }] = useUpdateProductMutation();
-  const [uploadImage] = useUploadImageMutation();
 
   const categoryOptions = useMemo(
     () =>
@@ -62,6 +53,14 @@ export default function ProductDetails() {
         label: category.name,
       })),
     [categoryResults],
+  );
+
+  const descriptionImageIds = useMemo(
+    () =>
+      (productResult?.data?.images || [])
+        .filter((img) => img?.scope === "prod-desc")
+        .map((img) => img?.id),
+    [productResult?.data?.images],
   );
 
   useLayoutEffect(() => {
@@ -80,23 +79,22 @@ export default function ProductDetails() {
     }
   }, [productResult]);
 
+  const buildPayload = (values: ProductFormTypes): CreateProductDTO => ({
+    name: values.name.trim(),
+    description: values.description,
+    price: Number(values.price),
+    salePrice: values.salePrice ? Number(values.salePrice) : null,
+    categoryId: Number(values.categoryId),
+    summary: values.summary,
+    thumbnailUrl: null,
+  });
+
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
 
-      const payload: CreateProductDTO = {
-        name: values.name.trim(),
-        description: values.description,
-        price: Number(values.price),
-        salePrice: values.salePrice ? Number(values.salePrice) : null,
-        categoryId: Number(values.categoryId),
-        summary: values.summary,
-        thumbnailUrl: null,
-        img: [],
-      };
-
       if (!isCreateMode) {
-        await updateProduct({ id: productId, body: payload }).unwrap();
+        await updateProduct({ id: productId, body: buildPayload(values) }).unwrap();
         toast.success("Đã cập nhật sản phẩm.");
       }
     } catch (error: any) {
@@ -107,33 +105,11 @@ export default function ProductDetails() {
     }
   };
 
-  const handleUploadGallery = async (file: File) => {
-    if (isCreateMode) {
-      toast.warning("Hãy lưu sản phẩm trước khi tải ảnh gallery.");
-      return;
-    }
-
-    try {
-      const { data: result } = await uploadImage({
-        files: [file],
-        id: productId!,
-        type: "product",
-      }).unwrap();
-
-      setUploadedFile(file);
-      console.log("Upload result:", result);
-      toast.success("Đã tải ảnh vào gallery.");
-    } catch (error) {
-      console.error(error);
-      toast.error("Không thể tải ảnh gallery.");
-    }
-  };
-
   return (
     <div className="space-y-6">
       {fetchingProduct && (
         <div className="fixed top-0 left-0 right-0 -bottom-20 bg-gray-100/50 z-1000 flex items-center justify-center">
-          <Spin spinning={fetchingProduct} size="large" />
+          <Spin spinning={fetchingProduct} size="medium" />
         </div>
       )}
       <div className="flex items-center justify-between">
@@ -149,79 +125,82 @@ export default function ProductDetails() {
           <Button variant="outline" onClick={() => navigate(PATH.PRODUCT)}>
             Quay lại
           </Button>
-          <Button onClick={() => void handleSave()} loading={isLoading || updating || creating}>
+          <Button onClick={() => handleSave()} loading={isLoading || updating}>
             Lưu sản phẩm
           </Button>
         </div>
       </div>
 
-      <Form form={form} layout="vertical">
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="space-y-1 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-            <Form.Item
-              label="Tên sản phẩm"
-              name="name"
-              rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm." }]}
-            >
-              <Input placeholder="Nhập tên sản phẩm" disabled={fetchingProduct} />
-            </Form.Item>
-
-            {/* <Form.Item label="Slug" name="slug">
-              <Input placeholder="de-khong-dau (tự tạo nếu để trống)" />
-            </Form.Item> */}
-
-            <Form.Item
-              label="Danh mục"
-              name="categoryId"
-              rules={[{ required: true, message: "Vui lòng chọn danh mục." }]}
-            >
-              <Select
-                options={categoryOptions}
-                placeholder="Chọn danh mục"
-                onChange={(value) => form.setFieldValue("categoryId", value)}
-              />
-            </Form.Item>
-
-            <div className="grid grid-cols-2 gap-3">
+      <ComponentCard>
+        <Form form={form} layout="vertical">
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="space-y-1">
               <Form.Item
-                label="Giá gốc"
-                name="price"
-                rules={[{ required: true, message: "Vui lòng nhập giá." }]}
+                label="Tên sản phẩm"
+                name="name"
+                rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm." }]}
               >
-                <Input type="number" placeholder="0" disabled={fetchingProduct} />
+                <Input placeholder="Nhập tên sản phẩm" disabled={fetchingProduct} />
               </Form.Item>
 
-              <Form.Item label="Giá giảm" name="salePrice">
-                <Input type="number" placeholder="0" disabled={fetchingProduct} />
+              <Form.Item
+                label="Danh mục"
+                name="categoryId"
+                rules={[{ required: true, message: "Vui lòng chọn danh mục." }]}
+              >
+                <Select
+                  options={categoryOptions}
+                  placeholder="Chọn danh mục"
+                  onChange={(value) => form.setFieldValue("categoryId", value)}
+                />
+              </Form.Item>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Form.Item
+                  label="Giá gốc"
+                  name="price"
+                  rules={[{ required: true, message: "Vui lòng nhập giá." }]}
+                >
+                  <Input type="number" placeholder="0" disabled={fetchingProduct} />
+                </Form.Item>
+
+                <Form.Item label="Giá giảm" name="salePrice">
+                  <Input type="number" placeholder="0" disabled={fetchingProduct} />
+                </Form.Item>
+              </div>
+
+              <Form.Item
+                label="Tóm tắt"
+                name="summary"
+                style={{ margin: 0 }}
+                className="product-summary-stretch flex-1"
+              >
+                <TextArea
+                  placeholder="Nhập tóm tắt sản phẩm"
+                  disabled={fetchingProduct}
+                  className="h-full"
+                />
               </Form.Item>
             </div>
 
-            <Form.Item label="Tóm tắt" name="summary">
-              <TextArea rows={4} placeholder="Nhập tóm tắt sản phẩm" disabled={fetchingProduct} />
-            </Form.Item>
-          </div>
-
-          <div className="flex flex-col gap-4 justify-between rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-            <div className="flex-1 flex flex-col">
-              <p className="text-sm text-gray-700 dark:text-gray-200 mb-2">Ảnh sản phẩm</p>
-              <UploadImageBox
-                value={uploadedFile}
-                onChange={(file) => handleUploadGallery(file as File)}
-                maxSizeMB={2}
-              />
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 mt-4">
-          <Form.Item label="Mô tả chi tiết" name="description">
-            <RichTextEditor
-              value={descriptionValue}
-              onChange={(value) => form.setFieldValue("description", value)}
+            <ProductUploadImgBox
+              productId={productResult?.data?.id}
+              imageUrls={productResult?.data?.images?.filter((img) => img?.scope === "product")}
             />
-          </Form.Item>
-        </section>
-      </Form>
+          </section>
+
+          <section className="mt-4">
+            <Form.Item label="Mô tả chi tiết" name="description">
+              <RichTextEditor
+                value={descriptionValue}
+                imageIds={(descriptionImageIds as string[]) || []}
+                ownerId={productId!}
+                type="prod-desc"
+              />
+            </Form.Item>
+          </section>
+        </Form>
+      </ComponentCard>
     </div>
   );
 }

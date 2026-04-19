@@ -5,38 +5,29 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import type { ManuProcessStep } from "../../types/manuProcess.type";
 import ManuProcessStepItem from "./ManuProcessStepItem";
 
-type Step = { id: string; title: string; content: string; image: string };
+interface ManuProcessStepListProps {
+  steps: ManuProcessStep[];
+  onEdit: (step: ManuProcessStep) => void;
+  onDelete: (localId: string) => void;
+  onReorder: (steps: ManuProcessStep[]) => void;
+}
 
-const initialSteps: Step[] = [
-  {
-    id: "1",
-    title: "Bước 1: Cài đặt môi trường",
-    content: "Cài Node.js, npm và khởi tạo project Vite + React.",
-    image: "",
-  },
-  {
-    id: "2",
-    title: "Bước 2: Cài dnd-kit",
-    content: "Chạy npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities.",
-    image: "",
-  },
-  {
-    id: "3",
-    title: "Bước 3: Tạo component",
-    content: "Tạo StepList, StepItem và StepModal theo hướng dẫn.",
-    image: "",
-  },
-];
-
-export default function ManuProcessStepList() {
-  const [steps, setSteps] = useState<Step[]>(initialSteps);
-  const [activeStep, setActiveStep] = useState<Step | null>(null);
+export default function ManuProcessStepList({
+  steps,
+  onEdit,
+  onDelete,
+  onReorder,
+}: ManuProcessStepListProps) {
+  const [activeStep, setActiveStep] = useState<ManuProcessStep | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -44,25 +35,22 @@ export default function ManuProcessStepList() {
     }),
   );
 
-  const handleDragStart = ({ active }: any) => {
-    setActiveStep(steps.find((s) => s.id === active.id) ?? null);
+  const handleDragStart = ({ active }: DragStartEvent) => {
+    setActiveStep(steps.find((s) => s.id === String(active.id)) ?? null);
   };
 
-  const handleDragEnd = ({ active, over }: any) => {
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
     setActiveStep(null);
     if (!over || active.id === over.id) return;
-    setSteps((prev) => {
-      const from = prev.findIndex((s) => s.id === active.id);
-      const to = prev.findIndex((s) => s.id === over.id);
-      return arrayMove(prev, from, to);
-    });
+
+    const from = steps.findIndex((s) => s.id === String(active.id));
+    const to = steps.findIndex((s) => s.id === String(over.id));
+    if (from < 0 || to < 0) return;
+
+    onReorder(arrayMove(steps, from, to));
   };
 
   const handleDragCancel = () => setActiveStep(null);
-
-  const openAdd = () => {};
-  const openEdit = (step: Step) => {};
-  const handleDelete = (id: string) => setSteps((prev) => prev.filter((s) => s.id !== id));
 
   return (
     <div>
@@ -73,15 +61,17 @@ export default function ManuProcessStepList() {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <SortableContext items={steps.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext
+          items={steps.map((s, idx) => s.id ?? idx)}
+          strategy={verticalListSortingStrategy}
+        >
           <div className="flex flex-col gap-1">
-            {steps.map((step, i) => (
+            {steps.map((step, idx) => (
               <ManuProcessStepItem
-                key={step.id}
+                key={step.id ?? idx}
                 step={step}
-                index={i}
-                onEdit={openEdit}
-                onDelete={handleDelete}
+                onEdit={onEdit}
+                onDelete={onDelete}
               />
             ))}
           </div>
@@ -94,7 +84,6 @@ export default function ManuProcessStepList() {
             {activeStep && (
               <ManuProcessStepItem
                 step={activeStep}
-                index={steps.findIndex((s) => s.id === activeStep.id)}
                 onEdit={() => {}}
                 onDelete={() => {}}
                 isOverlay
@@ -108,7 +97,7 @@ export default function ManuProcessStepList() {
       {steps.length === 0 && (
         <div className="text-center py-16 text-gray-400">
           <div className="text-4xl mb-3">📋</div>
-          <p className="text-sm">Chưa có step nào. Nhấn "+ Thêm Step" để bắt đầu.</p>
+          <p className="text-sm">Chưa có bước nào. Nhấn "Thêm bước" để bắt đầu.</p>
         </div>
       )}
     </div>

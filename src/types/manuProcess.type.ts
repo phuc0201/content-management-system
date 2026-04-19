@@ -1,14 +1,14 @@
 export interface ManuProcessStep extends Record<string, unknown> {
-  id?: number;
+  id?: string;
   title: string;
   content: string;
-  imgId: string | null;
+  imageId: string | null;
 }
 
 export interface ManuProcess extends Record<string, unknown> {
   title: string;
   intro: string;
-  steps: ManuProcessStep[];
+  steps?: ManuProcessStep[];
 }
 
 export type CreateManuProcessDTO = ManuProcess;

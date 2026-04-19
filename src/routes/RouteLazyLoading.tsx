@@ -1,10 +1,10 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from "react";
-import ManuProcessStepList from "../components/manuProcess/ManuProcessStepList";
 import { PATH } from "../constants/path.constant";
 import AboutPage from "../pages/About";
 import BlogLayout from "../pages/Blog";
 import BlogList from "../pages/Blog/Blog";
 import Contact from "../pages/Contact";
+import ManufacturingProcessPage from "../pages/ManufacturingProcess";
 import PolicyLayout from "../pages/Policies";
 import Policies from "../pages/Policies/Policies";
 import ProductsLayout from "../pages/Products";
@@ -130,7 +130,7 @@ const appRoutes: AppRouteItem[] = [
     title: "Quy trình sản xuất",
     breadcrumb: "Quy trình sản xuất",
     keepAlive: true,
-    component: ManuProcessStepList,
+    component: ManufacturingProcessPage,
   },
   {
     key: PATH.POLICY,

@@ -1,10 +1,11 @@
-import { message, Space } from "antd";
+import { Image, message, Space } from "antd";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CategorySelect from "../../components/product/CategorySelect";
 import DeleteButton from "../../components/table/DeleteButton";
 import EditButton from "../../components/table/EditButton";
 import TableShared from "../../components/table/TableShared";
+import { config } from "../../config";
 import { PATH } from "../../constants/path.constant";
 import { useGetCategoriesQuery } from "../../services/category.service";
 import {
@@ -43,13 +44,8 @@ export default function Products() {
       key: "Image",
       title: "Ảnh",
       render: (record: Product) => {
-        const firstImage = record?.images?.[0];
-        const imageSrc =
-          import.meta.env.VITE_BASE_URL +
-          "/" +
-          (typeof firstImage === "string" ? firstImage : (firstImage?.url ?? ""));
-
-        return <img src={imageSrc} alt="" className="w-12.5 h-12.5 aspect-square object-cover" />;
+        const imageSrc = record?.thumbnailUrl ? config.imageBaseUrl + record?.thumbnailUrl : "";
+        return <Image src={imageSrc} alt="" height={50} />;
       },
     },
     { key: "name", title: "Tên sản phẩm" },

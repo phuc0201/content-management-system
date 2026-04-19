@@ -1,20 +1,17 @@
 import { Form, Typography } from "antd";
 import { useForm } from "antd/es/form/Form";
 import "ckeditor5/ckeditor5-content.css";
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import RichTextEditor from "../../components/common/RichTextEditor";
 import UploadImageBox from "../../components/common/UpdloadImageBox";
 import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
+import { config } from "../../config";
 import { PATH } from "../../constants/path.constant";
-import {
-  useCreateBlogMutation,
-  useGetBlogByIdQuery,
-  useUpdateBlogMutation,
-  useUploadBlogImageMutation,
-} from "../../services/blog.service";
+import { useGetBlogByIdQuery, useUpdateBlogMutation } from "../../services/blog.service";
+import { useUploadImageMutation } from "../../services/upload.service";
 
 const { Title, Text } = Typography;
 
@@ -24,47 +21,53 @@ export default function BlogDetails() {
   const { id } = useParams();
 
   const blogId = id;
-  const isCreateMode = !blogId;
 
-  const { data: blogResult, isFetching: fetchingBlog } = useGetBlogByIdQuery(blogId!, {
-    skip: isCreateMode,
-  });
+  const { data: blogResult } = useGetBlogByIdQuery(blogId!);
 
-  const [createBlog, { isLoading: creating }] = useCreateBlogMutation();
   const [updateBlog, { isLoading: updating }] = useUpdateBlogMutation();
 
-  const [uploadBlogImage] = useUploadBlogImageMutation();
+  const [uploadImage] = useUploadImageMutation();
 
-  const loading = fetchingBlog || creating || updating;
+  const contentImageIds = useMemo(
+    () =>
+      (blogResult?.data?.images || [])
+        .filter((img) => img?.scope === "prod-desc")
+        .map((img) => img?.id),
+    [blogResult?.data?.images],
+  );
+
+  const handleUploadThumbnail = async (file: File) => {
+    try {
+      if (!blogId) return;
+
+      uploadImage({
+        files: [file],
+        type: "blog-thumb",
+        id: blogId,
+      }).unwrap();
+    } catch (error) {
+      console.error("Error uploading thumbnail:", error);
+      toast.error("Đã có lỗi xảy ra khi tải ảnh lên. Vui lòng thử lại.");
+    }
+  };
 
   const handleSave = async () => {
     try {
+      if (!blogId) return;
+
       const values = await form.validateFields();
       const { thumbnailUrl, ...payload } = values;
-
-      if (isCreateMode) {
-        const result = await createBlog(payload).unwrap();
-        if (result?.data) {
-          if (thumbnailUrl instanceof File) {
-            uploadBlogImage({ id: result.data.id, file: thumbnailUrl }).unwrap();
-          }
-          navigate(PATH.BLOG_DETAIL.replace(":id", String(result?.data?.id)));
-        }
-        toast.success("Tạo bài viết thành công!");
-      } else {
-        await updateBlog({
-          id: blogId,
-          body: {
-            ...payload,
-            ...(thumbnailUrl === null ? { thumbnailUrl: null } : {}),
-          },
-        }).unwrap();
-
-        if (thumbnailUrl instanceof File) {
-          uploadBlogImage({ id: blogId!, file: thumbnailUrl }).unwrap();
-        }
-        toast.success("Cập nhật bài viết thành công!");
+      if (
+        thumbnailUrl &&
+        thumbnailUrl !== blogResult?.data?.thumbnailUrl &&
+        thumbnailUrl instanceof File
+      ) {
+        handleUploadThumbnail(thumbnailUrl);
       }
+
+      await updateBlog({ id: blogId!, body: payload }).unwrap();
+
+      toast.success("Cập nhật bài viết thành công!");
     } catch (error) {
       console.error(error);
       toast.error("Đã có lỗi xảy ra. Vui lòng thử lại.");
@@ -76,7 +79,7 @@ export default function BlogDetails() {
       const { thumbnailUrl, ...rest } = blogResult.data;
       form.setFieldsValue({
         ...rest,
-        thumbnailUrl: thumbnailUrl ? import.meta.env.VITE_BASE_URL + thumbnailUrl : null,
+        thumbnailUrl: thumbnailUrl ? config.imageBaseUrl + thumbnailUrl : null,
       });
     }
   }, [blogResult, form]);
@@ -86,7 +89,7 @@ export default function BlogDetails() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <Title level={4} className="mb-1!">
-            {isCreateMode ? "Tạo bài viết" : "Chi tiết bài viết"}
+            Chỉnh sửa bài viết
           </Title>
           <Text type="secondary" className="text-sm">
             Cập nhật thông tin, mô tả và nội dung bài viết.
@@ -98,8 +101,8 @@ export default function BlogDetails() {
             Quay lại
           </Button>
 
-          <Button size="sm" variant="primary" type="submit" loading={loading}>
-            {isCreateMode ? "Tạo mới" : "Cập nhật"}
+          <Button size="sm" variant="primary" type="submit" loading={updating}>
+            Lưu bài viết
           </Button>
         </div>
       </div>
@@ -111,7 +114,7 @@ export default function BlogDetails() {
           required
           rules={[{ required: true, message: "Vui lòng nhập tiêu đề bài viết." }]}
         >
-          <Input placeholder="Nhập tiêu đề bài viết" disabled={loading} />
+          <Input placeholder="Nhập tiêu đề bài viết" disabled={updating} />
         </Form.Item>
 
         <Form.Item
@@ -119,7 +122,7 @@ export default function BlogDetails() {
           name={"thumbnailUrl"}
           rules={[{ required: false, message: "Vui lòng thêm ảnh đại diện" }]}
         >
-          <UploadImageBox />
+          <UploadImageBox maxSizeMB={10} />
         </Form.Item>
 
         <Form.Item
@@ -128,7 +131,11 @@ export default function BlogDetails() {
           required
           rules={[{ required: true, message: "Vui lòng nhập nội dung bài viết." }]}
         >
-          <RichTextEditor />
+          <RichTextEditor
+            type="blog"
+            ownerId={blogId}
+            imageIds={(contentImageIds as string[]) || []}
+          />
         </Form.Item>
       </section>
     </Form>

@@ -27,7 +27,7 @@ export function buildBaseEndpoints<
         url: `${resource}/${id}`,
         method: "GET",
       }),
-      // providesTags: (_result, _error, id) => [{ type: tag, id }],
+      providesTags: (_result, _error, id) => [{ type: tag, id }],
     }),
 
     create: builder.mutation<ApiResponse<TEntity>, TCreateDTO>({
