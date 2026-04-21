@@ -1,27 +1,7 @@
 import type { ApiResponse } from "../types/apiResponse";
+import type { SiteConfigItem, UpsertSiteConfigBody } from "../types/siteConfig.type";
 import type { AxiosBaseQueryError } from "./axiosInstance/axiosBaseQuery";
 import { createBaseApiFactory } from "./axiosInstance/baseFactory";
-
-export type SiteConfigItem = {
-  id: string;
-  type: string;
-  text?: string | null;
-  title?: string | null;
-  content?: string | null;
-  link?: string | null;
-  imageId?: string | null;
-  image?: unknown;
-  active?: boolean;
-  index?: number | null;
-};
-
-export type UpsertSiteConfigBody = {
-  text?: string;
-  title?: string;
-  content?: string;
-  imageId?: string;
-  link?: string;
-};
 
 export const siteConfigService = createBaseApiFactory<any, any, any>({
   resource: "/site-configs",
@@ -41,19 +21,36 @@ const siteConfigExtraApi = siteConfigService.injectEndpoints({
         method: "POST",
         data: body,
       }),
-      transformResponse: (response: ApiResponse<SiteConfigItem>) => response?.data ?? null,
+      transformResponse: (response: ApiResponse<SiteConfigItem>) => response?.data || null,
       transformErrorResponse: (error: AxiosBaseQueryError) => {
         console.error("upsertSiteConfigByType failed:", error);
         return error;
       },
-      invalidatesTags: ["SiteConfig"],
+      async onQueryStarted({ type }, { dispatch, queryFulfilled }) {
+        try {
+          const { data: newItem } = await queryFulfilled;
+          if (!newItem) return;
+
+          dispatch(
+            siteConfigService.util.updateQueryData("getList", {}, (draft) => {
+              if (!draft?.data) return;
+
+              const index = draft.data.findIndex((item) => item.type === type);
+
+              if (index !== -1) {
+                draft.data[index] = newItem;
+              } else {
+                draft.data.push(newItem);
+              }
+            }),
+          );
+        } catch {
+          // keep cache unchanged on error
+        }
+      },
     }),
   }),
 });
 
-export const {
-  useGetListQuery: useGetSiteConfigListQuery,
-  useUpdateMutation: useUpdateSiteConfigMutation,
-  useCreateMutation: useCreateSiteConfigMutation,
-  useUpsertSiteConfigByTypeMutation,
-} = siteConfigExtraApi;
+export const { useGetListQuery: useGetSiteConfigsQuery, useUpsertSiteConfigByTypeMutation } =
+  siteConfigExtraApi;

@@ -8,6 +8,7 @@ import RichTextEditor from "../../components/common/RichTextEditor";
 import UploadImageBox from "../../components/common/UpdloadImageBox";
 import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
+import SplitButton from "../../components/ui/button/SplitButton";
 import { config } from "../../config";
 import { PATH } from "../../constants/path.constant";
 import { useGetBlogByIdQuery, useUpdateBlogMutation } from "../../services/blog.service";
@@ -51,7 +52,7 @@ export default function BlogDetails() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (isPublished: boolean) => {
     try {
       if (!blogId) return;
 
@@ -65,7 +66,7 @@ export default function BlogDetails() {
         handleUploadThumbnail(thumbnailUrl);
       }
 
-      await updateBlog({ id: blogId!, body: payload }).unwrap();
+      await updateBlog({ id: blogId!, body: { ...payload, isDraft: !isPublished } }).unwrap();
 
       toast.success("Cập nhật bài viết thành công!");
     } catch (error) {
@@ -100,10 +101,7 @@ export default function BlogDetails() {
           <Button variant="outline" onClick={() => navigate(PATH.BLOG)}>
             Quay lại
           </Button>
-
-          <Button size="sm" variant="primary" type="submit" loading={updating}>
-            Lưu bài viết
-          </Button>
+          <SplitButton onSave={handleSave} isDraft={!!blogResult?.data?.isDraft} />
         </div>
       </div>
 

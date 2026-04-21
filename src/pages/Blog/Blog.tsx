@@ -4,12 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import DeleteButton from "../../components/table/DeleteButton";
 import EditButton from "../../components/table/EditButton";
+import PublishToggle from "../../components/table/PublishToggle";
 import TableShared from "../../components/table/TableShared";
 import { PATH } from "../../constants/path.constant";
 import {
   useCreateBlogMutation,
   useGetBlogsQuery,
   useRemoveBlogMutation,
+  useUpdateBlogMutation,
 } from "../../services/blog.service";
 import type { Blog } from "../../types/blog.type";
 
@@ -27,7 +29,7 @@ export default function BlogList() {
   });
 
   const [createBlog, { isLoading: creating }] = useCreateBlogMutation();
-
+  const [updateBlog, { isLoading: isUpdatingBlog }] = useUpdateBlogMutation();
   const [removeBlog, { isLoading: removingBlog }] = useRemoveBlogMutation();
 
   const filteredBlogs = useMemo(() => {
@@ -61,6 +63,19 @@ export default function BlogList() {
     {
       key: "title",
       title: "Tiêu đề",
+    },
+    {
+      key: "isDraft",
+      title: "Trạng thái",
+      render: (record: Blog) => (
+        <PublishToggle
+          disabled={isUpdatingBlog}
+          published={!record.isDraft}
+          onChange={(published) => {
+            handleTogglePublish(record.id, published);
+          }}
+        />
+      ),
     },
     {
       key: "actions",
@@ -97,6 +112,15 @@ export default function BlogList() {
       if (blogCreated?.id) navigate(PATH.BLOG + `/${blogCreated.id}`);
     } catch (error) {
       console.error("Error creating blog:", error);
+      toast.error("Đã có lỗi xảy ra. Vui lòng thử lại.");
+    }
+  };
+
+  const handleTogglePublish = async (id: number, published: boolean) => {
+    try {
+      await updateBlog({ id: id, body: { isDraft: !published } }).unwrap();
+    } catch (error) {
+      console.error("Error updating blog:", error);
       toast.error("Đã có lỗi xảy ra. Vui lòng thử lại.");
     }
   };

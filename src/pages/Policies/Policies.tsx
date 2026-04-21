@@ -5,7 +5,7 @@ import DeleteButton from "../../components/table/DeleteButton";
 import EditButton from "../../components/table/EditButton";
 import TableShared from "../../components/table/TableShared";
 import { PATH } from "../../constants/path.constant";
-import { useGetPoliciesQuery } from "../../services/policy.service";
+import { useCreatePolicyMutation, useGetPoliciesQuery } from "../../services/policy.service";
 import type { Policy } from "../../types/policy.type";
 
 export default function Policies() {
@@ -18,6 +18,21 @@ export default function Policies() {
       pageSize: 10,
     },
   });
+
+  const [createPolicy, { isLoading: isCreating }] = useCreatePolicyMutation();
+
+  const handleCreate = async () => {
+    try {
+      const { data: newPolicy } = await createPolicy({
+        title: "Chính sách mới",
+        content: "",
+      });
+
+      naviage(`${PATH.POLICY}/${newPolicy?.data?.id}`);
+    } catch (error) {
+      console.error("Lỗi khi tạo chính sách:", error);
+    }
+  };
 
   const columns = [
     {
@@ -52,9 +67,8 @@ export default function Policies() {
         buttonAdd={{
           text: "Thêm",
           show: true,
-          onAdd: () => {
-            naviage(`${PATH.POLICY}/create`);
-          },
+          isLoading: isCreating,
+          onAdd: handleCreate,
         }}
         search={{
           enableSearch: true,

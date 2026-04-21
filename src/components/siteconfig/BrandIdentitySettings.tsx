@@ -1,18 +1,26 @@
 import { Col, ColorPicker, Form, Row, Typography } from "antd";
 import { useForm } from "antd/es/form/Form";
+import { useLayoutEffect, useRef } from "react";
+import { toast } from "react-toastify";
+import { config } from "../../config";
+import { SiteConfigType } from "../../constants/siteConfig.constant";
+import { useUpsertSiteConfigByTypeMutation } from "../../services/siteConfig.service";
+import { useDeleteImageMutation, useUploadImageMutation } from "../../services/upload.service";
+import type { SiteConfigItem } from "../../types/siteConfig.type";
 import UploadImageBox from "../common/UpdloadImageBox";
+import Button from "../ui/button/Button";
 
 const { Title, Text } = Typography;
 
-interface BrandIdentityFormValues {
-  logoDesktop: File | null;
-  logoMobile: File | null;
-  favicon: File | null;
-  primaryColor: string;
-}
+type BrandIdentitySettingsProps = {
+  favicon: SiteConfigItem | null;
+  mainLogo: SiteConfigItem | null;
+  subLogo: SiteConfigItem | null;
+  colorPrimary: SiteConfigItem | null;
+};
 
 interface FieldConfig {
-  name: keyof BrandIdentityFormValues;
+  name: string;
   label: string;
   description: string;
   recommendedSize: string;
@@ -21,21 +29,21 @@ interface FieldConfig {
 
 const FIELDS: FieldConfig[] = [
   {
-    name: "logoDesktop",
+    name: SiteConfigType.MainLogo,
     label: "Logo chính",
     description: "Hiển thị trên header desktop, email, tài liệu in ấn.",
     recommendedSize: "400 × 120 px",
     maxSizeMB: 2,
   },
   {
-    name: "logoMobile",
-    label: "Logo mobile",
-    description: "Hiển thị trên thiết bị di động, thường là dạng icon vuông.",
+    name: SiteConfigType.SubLogo,
+    label: "Logo phụ",
+    description: "Hiển thị trên header mobile, email, tài liệu in ấn.",
     recommendedSize: "120 × 120 px",
     maxSizeMB: 1,
   },
   {
-    name: "favicon",
+    name: SiteConfigType.Favicon,
     label: "Favicon",
     description: "Icon hiển thị trên tab trình duyệt.",
     recommendedSize: "32 × 32 px",
@@ -43,80 +51,158 @@ const FIELDS: FieldConfig[] = [
   },
 ];
 
-const BrandIdentitySettings: React.FC = () => {
-  const [form] = useForm<BrandIdentityFormValues>();
+export default function BrandIdentitySettings(props: BrandIdentitySettingsProps) {
+  const isDirty = useRef(false);
+  const { favicon, mainLogo, subLogo, colorPrimary } = { ...props };
+  const [form] = useForm();
+  const [upsertSiteConfigByType, { isLoading: isUpserting }] = useUpsertSiteConfigByTypeMutation();
+  const [deleteImage] = useDeleteImageMutation();
+  const [uploadImage] = useUploadImageMutation();
+
+  const currentImages = useRef({
+    [SiteConfigType.MainLogo]: props?.mainLogo?.images?.[0] ?? null,
+    [SiteConfigType.SubLogo]: props?.subLogo?.images?.[0] ?? null,
+    [SiteConfigType.Favicon]: props?.favicon?.images?.[0] ?? null,
+  });
+
+  const handleSave = async (values: any) => {
+    try {
+      const colorValue = values?.[SiteConfigType.ColorPrimary];
+
+      const imageFields = [
+        { key: SiteConfigType.MainLogo, configId: props?.mainLogo?.id },
+        { key: SiteConfigType.SubLogo, configId: props?.subLogo?.id },
+        { key: SiteConfigType.Favicon, configId: props?.favicon?.id },
+      ];
+
+      await Promise.all(
+        imageFields.map(async ({ key, configId }) => {
+          const value = values?.[key];
+          if (!(value instanceof File)) return;
+
+          const existingImage = currentImages.current[key];
+          if (existingImage?.id) {
+            await deleteImage({ id: existingImage.id }).unwrap();
+          }
+
+          if (configId) {
+            const result = await uploadImage({
+              files: [value],
+              type: "site-config",
+              id: configId,
+            }).unwrap();
+
+            const newImage = result?.data?.[0] ?? null;
+            currentImages.current[key] = newImage;
+          }
+        }),
+      );
+
+      await upsertSiteConfigByType({
+        type: SiteConfigType.ColorPrimary,
+        body: {
+          text:
+            typeof colorValue === "string"
+              ? colorValue
+              : (colorValue?.toHexString?.() ?? config.primaryColorDefault),
+        },
+      }).unwrap();
+
+      toast.success("Đã lưu nhận diện thương hiệu.");
+    } catch (error) {
+      console.error("Error saving brand identity:", error);
+      toast.error("Đã có lỗi xảy ra khi lưu nhận diện thương hiệu. Vui lòng thử lại.");
+    }
+  };
+
+  useLayoutEffect(() => {
+    if (isDirty.current) {
+      isDirty.current = false;
+      return;
+    }
+
+    const mainLogoUrl = mainLogo?.images?.[0]?.url;
+    const subLogoUrl = subLogo?.images?.[0]?.url;
+    const faviconUrl = favicon?.images?.[0]?.url;
+
+    form.setFieldsValue({
+      [SiteConfigType.MainLogo]: mainLogoUrl ? config.imageBaseUrl + mainLogoUrl : null,
+      [SiteConfigType.SubLogo]: subLogoUrl ? config.imageBaseUrl + subLogoUrl : null,
+      [SiteConfigType.Favicon]: faviconUrl ? config.imageBaseUrl + faviconUrl : null,
+      [SiteConfigType.ColorPrimary]: colorPrimary?.text || config.primaryColorDefault,
+    });
+  }, [favicon, mainLogo, subLogo, colorPrimary]);
 
   return (
-    <div className="">
-      <div className="mb-4">
-        <Title level={4} className="mb-1!">
-          Nhận diện thương hiệu
-        </Title>
-        <Text type="secondary" className="text-sm">
-          Tải lên logo và favicon để hiển thị nhất quán trên toàn bộ hệ thống.
-        </Text>
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleSave}
+      onValuesChange={() => {
+        isDirty.current = true;
+      }}
+    >
+      <div className="flex items-start justify-between">
+        <div className="mb-4">
+          <Title level={4} className="mb-1!">
+            Nhận diện thương hiệu
+          </Title>
+          <Text type="secondary" className="text-sm">
+            Tải lên logo và favicon để hiển thị nhất quán trên toàn bộ hệ thống.
+          </Text>
+        </div>
+        <Button variant="primary" type="submit" loading={isUpserting}>
+          Lưu
+        </Button>
       </div>
 
-      <Form form={form} layout="vertical" initialValues={{ primaryColor: "#78070e" }}>
-        <Form.Item
-          label={<span className="font-medium text-gray-700 dark:text-gray-200">Màu chính</span>}
-          name="primaryColor"
-        >
-          <ColorPicker />
-        </Form.Item>
+      <Form.Item
+        label={<span className="font-medium text-gray-700 dark:text-gray-200">Màu chính</span>}
+        name="color_primary"
+      >
+        <ColorPicker />
+      </Form.Item>
 
-        <Row gutter={[20, 20]}>
-          {FIELDS.map((field) => (
-            <Col key={field.name} xs={24} md={24} xl={12} xxl={8}>
-              <Form.Item
-                name={field.name}
-                label={
-                  <span className="font-medium text-gray-700 dark:text-gray-200">
-                    {field.label}
-                  </span>
-                }
-                rules={[
-                  {
-                    validator: (_, value) => {
-                      if (!value) {
-                        return Promise.reject(new Error(`Vui lòng tải lên ${field.label}`));
-                      }
-                      return Promise.resolve();
-                    },
-                  },
-                ]}
-              >
-                <Form.Item noStyle shouldUpdate>
-                  {({ setFieldValue }) => (
-                    <UploadImageBox
-                      onChange={(file: File | null) => setFieldValue(field.name, file)}
-                      maxSizeMB={field.maxSizeMB}
-                    />
-                  )}
-                </Form.Item>
-              </Form.Item>
+      <Row gutter={[20, 20]}>
+        {FIELDS.map((field) => (
+          <Col key={field.name} xs={24} md={24} xl={12} xxl={8}>
+            <Form.Item
+              name={field.name}
+              label={
+                <span className="font-medium text-gray-700 dark:text-gray-200">{field.label}</span>
+              }
+              // rules={[
+              //   {
+              //     validator: (_, value) => {
+              //       if (!value) {
+              //         return Promise.reject(new Error(`Vui lòng tải lên ${field.label}`));
+              //       }
+              //       return Promise.resolve();
+              //     },
+              //   },
+              // ]}
+            >
+              <UploadImageBox maxSizeMB={field.maxSizeMB} />
+            </Form.Item>
 
-              <div className="mt-1 space-y-0.5">
-                <Text type="secondary" className="text-xs block leading-relaxed">
-                  {field.description}
-                </Text>
-                <Text type="secondary" className="text-xs block">
-                  Kích thước đề xuất:{" "}
-                  <span className="font-medium text-gray-600 dark:text-gray-400">
-                    {field.recommendedSize}
-                  </span>{" "}
-                  · Tối đa{" "}
-                  <span className="font-medium text-gray-600 dark:text-gray-400">
-                    {field.maxSizeMB < 1 ? `${field.maxSizeMB * 1000} KB` : `${field.maxSizeMB} MB`}
-                  </span>
-                </Text>
-              </div>
-            </Col>
-          ))}
-        </Row>
-      </Form>
-    </div>
+            <div className="mt-1 space-y-0.5">
+              <Text type="secondary" className="text-xs block leading-relaxed">
+                {field.description}
+              </Text>
+              <Text type="secondary" className="text-xs block">
+                Kích thước đề xuất:{" "}
+                <span className="font-medium text-gray-600 dark:text-gray-400">
+                  {field.recommendedSize}
+                </span>{" "}
+                · Tối đa{" "}
+                <span className="font-medium text-gray-600 dark:text-gray-400">
+                  {field.maxSizeMB < 1 ? `${field.maxSizeMB * 1000} KB` : `${field.maxSizeMB} MB`}
+                </span>
+              </Text>
+            </div>
+          </Col>
+        ))}
+      </Row>
+    </Form>
   );
-};
-
-export default BrandIdentitySettings;
+}

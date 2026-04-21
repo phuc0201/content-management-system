@@ -7,11 +7,11 @@ import Button from "../../components/ui/button/Button";
 import { SiteConfigType } from "../../constants/siteConfig.constant";
 import { useGoongSearchAddressQuery } from "../../services/goong.service";
 import {
-  useGetSiteConfigListQuery,
+  useGetSiteConfigsQuery,
   useUpsertSiteConfigByTypeMutation,
-  type UpsertSiteConfigBody,
 } from "../../services/siteConfig.service";
 import type { GoongGeocodeResult } from "../../types/goong.type";
+import type { UpsertSiteConfigBody } from "../../types/siteConfig.type";
 
 const { Title, Text } = Typography;
 
@@ -24,9 +24,7 @@ const normalizeOptionalString = (value: unknown) => {
 
 export default function Contact() {
   const [form] = Form.useForm();
-  const { data: siteConfigResponse, isFetching: isFetchingSiteConfig } = useGetSiteConfigListQuery(
-    {},
-  );
+  const { data: siteConfigResponse, isFetching: isFetchingSiteConfig } = useGetSiteConfigsQuery({});
   const [upsertSiteConfigByType, { isLoading: isUpsertingSiteConfig }] =
     useUpsertSiteConfigByTypeMutation();
   const [addressQuery, setAddressQuery] = useState("");

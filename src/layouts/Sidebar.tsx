@@ -4,8 +4,8 @@ import { GoWorkflow } from "react-icons/go";
 import { IoDocumentTextOutline, IoSettingsOutline } from "react-icons/io5";
 import { MdOutlineMail } from "react-icons/md";
 import { PiNewspaperClipping } from "react-icons/pi";
+import { SlDocs } from "react-icons/sl";
 import { Link, NavLink } from "react-router";
-import { DocsIcon } from "../assets/icons";
 import LogoDefault from "../assets/logo_default.png";
 import { PATH } from "../constants/path.constant";
 import { useSidebar } from "../providers/SidebarProvider";
@@ -14,7 +14,7 @@ const MENU_ITEMS = [
   {
     label: "Giới thiệu công ty",
     path: PATH.ABOUT,
-    icon: <DocsIcon />,
+    icon: <SlDocs />,
   },
   {
     label: "Thông tin liên hệ",

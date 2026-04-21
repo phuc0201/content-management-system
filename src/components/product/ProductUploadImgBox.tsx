@@ -3,9 +3,11 @@ import { Image, Modal, Upload } from "antd";
 import { useEffect, useState } from "react";
 import { GoPlus } from "react-icons/go";
 import { config } from "../../config";
+import { productService } from "../../services/product.service";
 import { useDeleteImageMutation, useUploadImageMutation } from "../../services/upload.service";
 import type { ProductImage } from "../../types/product.type";
 import ComponentCard from "../common/ComponentCard";
+import { useDispatch } from "react-redux";
 
 interface ProductUploadImgBoxProps {
   productId?: number;
@@ -19,6 +21,7 @@ const toUploadFiles = (images: ProductImage[]): UploadFile[] =>
     name: img.alt ?? img.filePath ?? "image",
     status: "done",
     url: config.imageBaseUrl + img.url,
+    thumbUrl: config.imageBaseUrl + img.url,
     response: { url: img.url },
   }));
 
@@ -27,6 +30,7 @@ export default function ProductUploadImgBox({
   imageUrls = [],
   onUploadSuccess,
 }: ProductUploadImgBoxProps) {
+  const dispatch = useDispatch();
   const [fileList, setFileList] = useState<UploadFile[]>(() => toUploadFiles(imageUrls));
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -61,6 +65,14 @@ export default function ProductUploadImgBox({
       const url = config.imageBaseUrl + imgs[0]?.url;
       onSuccess({ url }, file);
 
+      dispatch(
+        productService.util.updateQueryData('getById', productId!, (draft: any) => {
+          if (draft?.data?.images) {
+            draft.data.images.push(imgs[0]);
+          }
+        }) as any
+      );
+
       setFileList((prev) => {
         const next = prev.map((f) =>
           f.uid === file.uid ? { ...f, status: "done" as const, url, response: { url } } : f,
@@ -82,8 +94,16 @@ export default function ProductUploadImgBox({
         okText: "Xóa",
         cancelText: "Hủy",
         okButtonProps: { danger: true },
-        onOk: () => {
-          deleteImage({ id: file.uid });
+        onOk: async () => {
+          await deleteImage({ id: file.uid });
+          dispatch(
+            productService.util.updateQueryData("getById", productId!, (draft: any) => {
+              if (draft?.data?.images) {
+                draft.data.images = draft.data.images.filter((img: any) => img.id !== file.uid);
+              }
+            }) as any,
+          );
+
           setFileList((prev) => {
             const next = prev.filter((f) => f.uid !== file.uid);
             onUploadSuccess?.(next.map((f) => f.url!).filter(Boolean));

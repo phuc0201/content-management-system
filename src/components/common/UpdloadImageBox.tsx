@@ -52,11 +52,27 @@ const UploadImageBox = ({ value, onChange, maxSizeMB = 5 }: UploadImageBoxProps)
   }, [preview, releasePreview, value]);
 
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    (acceptedFiles: File[], rejectedFiles: any[]) => {
       setError(null);
+
+      // Handle rejected files (wrong type or too large via dropzone validator)
+      if (rejectedFiles.length > 0) {
+        const rejection = rejectedFiles[0];
+        const errorCode = rejection.errors?.[0]?.code;
+        if (errorCode === "file-too-large") {
+          setError(`File size must be less than ${maxSizeMB}MB`);
+        } else if (errorCode === "file-invalid-type") {
+          setError("Chỉ hỗ trợ file PNG, JPG, WebP, SVG");
+        } else {
+          setError("File không hợp lệ");
+        }
+        return;
+      }
+
       const file = acceptedFiles[0];
       if (!file) return;
 
+      // Double-check size manually as well
       const maxBytes = maxSizeMB * 1024 * 1024;
       if (file.size > maxBytes) {
         setError(`File size must be less than ${maxSizeMB}MB`);
@@ -80,6 +96,8 @@ const UploadImageBox = ({ value, onChange, maxSizeMB = 5 }: UploadImageBoxProps)
       "image/webp": [],
       "image/svg+xml": [],
     },
+    maxSize: maxSizeMB * 1024 * 1024, // <-- thêm maxSize để dropzone tự validate
+    onDragEnter: () => setError(null), // <-- xóa lỗi cũ khi bắt đầu kéo
   });
 
   const handleRemove = (e: React.MouseEvent) => {
@@ -121,19 +139,37 @@ const UploadImageBox = ({ value, onChange, maxSizeMB = 5 }: UploadImageBoxProps)
                       : "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
                   }`}
               >
-                <svg
-                  className="fill-current"
-                  width="29"
-                  height="28"
-                  viewBox="0 0 29 28"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M14.5019 3.91699C14.2852 3.91699 14.0899 4.00891 13.953 4.15589L8.57363 9.53186C8.28065 9.82466 8.2805 10.2995 8.5733 10.5925C8.8661 10.8855 9.34097 10.8857 9.63396 10.5929L13.7519 6.47752V18.667C13.7519 19.0812 14.0877 19.417 14.5019 19.417C14.9161 19.417 15.2519 19.0812 15.2519 18.667V6.48234L19.3653 10.5929C19.6583 10.8857 20.1332 10.8855 20.426 10.5925C20.7188 10.2995 20.7186 9.82463 20.4256 9.53184L15.0838 4.19378C14.9463 4.02488 14.7367 3.91699 14.5019 3.91699ZM5.91626 18.667C5.91626 18.2528 5.58047 17.917 5.16626 17.917C4.75205 17.917 4.41626 18.2528 4.41626 18.667V21.8337C4.41626 23.0763 5.42362 24.0837 6.66626 24.0837H22.3339C23.5766 24.0837 24.5839 23.0763 24.5839 21.8337V18.667C24.5839 18.2528 24.2482 17.917 23.8339 17.917C23.4197 17.917 23.0839 18.2528 23.0839 18.667V21.8337C23.0839 22.2479 22.7482 22.5837 22.3339 22.5837H6.66626C6.25205 22.5837 5.91626 22.2479 5.91626 21.8337V18.667Z"
-                  />
-                </svg>
+                {/* Icon thay đổi theo trạng thái drag */}
+                {isDragActive ? (
+                  <svg
+                    className="fill-current"
+                    width="29"
+                    height="28"
+                    viewBox="0 0 29 28"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    {/* Arrow DOWN khi đang kéo */}
+                    <path
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                      d="M14.5019 24.083C14.2852 24.083 14.0899 23.9911 13.953 23.8441L8.57363 18.4681C8.28065 18.1753 8.2805 17.7005 8.5733 17.4075C8.8661 17.1145 9.34097 17.1143 9.63396 17.4071L13.7519 21.5225V9.333C13.7519 8.9188 14.0877 8.583 14.5019 8.583C14.9161 8.583 15.2519 8.9188 15.2519 9.333V21.5177L19.3653 17.4071C19.6583 17.1143 20.1332 17.1145 20.426 17.4075C20.7188 17.7005 20.7186 18.1754 20.4256 18.4682L15.0838 23.8062C14.9463 23.9751 14.7367 24.083 14.5019 24.083ZM5.91626 9.333C5.91626 9.7472 5.58047 10.083 5.16626 10.083C4.75205 10.083 4.41626 9.7472 4.41626 9.333V6.1663C4.41626 4.9237 5.42362 3.9163 6.66626 3.9163H22.3339C23.5766 3.9163 24.5839 4.9237 24.5839 6.1663V9.333C24.5839 9.7472 24.2482 10.083 23.8339 10.083C23.4197 10.083 23.0839 9.7472 23.0839 9.333V6.1663C23.0839 5.7521 22.7482 5.4163 22.3339 5.4163H6.66626C6.25205 5.4163 5.91626 5.7521 5.91626 6.1663V9.333Z"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="fill-current"
+                    width="29"
+                    height="28"
+                    viewBox="0 0 29 28"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                      d="M14.5019 3.91699C14.2852 3.91699 14.0899 4.00891 13.953 4.15589L8.57363 9.53186C8.28065 9.82466 8.2805 10.2995 8.5733 10.5925C8.8661 10.8855 9.34097 10.8857 9.63396 10.5929L13.7519 6.47752V18.667C13.7519 19.0812 14.0877 19.417 14.5019 19.417C14.9161 19.417 15.2519 19.0812 15.2519 18.667V6.48234L19.3653 10.5929C19.6583 10.8857 20.1332 10.8855 20.426 10.5925C20.7188 10.2995 20.7186 9.82463 20.4256 9.53184L15.0838 4.19378C14.9463 4.02488 14.7367 3.91699 14.5019 3.91699ZM5.91626 18.667C5.91626 18.2528 5.58047 17.917 5.16626 17.917C4.75205 17.917 4.41626 18.2528 4.41626 18.667V21.8337C4.41626 23.0763 5.42362 24.0837 6.66626 24.0837H22.3339C23.5766 24.0837 24.5839 23.0763 24.5839 21.8337V18.667C24.5839 18.2528 24.2482 17.917 23.8339 17.917C23.4197 17.917 23.0839 18.2528 23.0839 18.667V21.8337C23.0839 22.2479 22.7482 22.5837 22.3339 22.5837H6.66626C6.25205 22.5837 5.91626 22.2479 5.91626 21.8337V18.667Z"
+                    />
+                  </svg>
+                )}
               </div>
             </div>
 

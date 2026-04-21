@@ -5,6 +5,7 @@ export interface Blog extends Record<string, unknown> {
   shortDescription?: string;
   images?: BlogImage[];
   content: string;
+  isDraft: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -29,6 +30,7 @@ export interface CreateBlogDTO {
   content?: string;
   shortDescription?: string;
   thumbnailUrl?: string | null;
+  isDraft?: boolean;
 }
 
 export type UpdateBlogDTO = Partial<CreateBlogDTO>;

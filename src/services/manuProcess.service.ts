@@ -30,6 +30,7 @@ const manuProcessExtraApi = manuProcessService.injectEndpoints({
         console.error("getManuProcess failed:", error);
         return error;
       },
+      providesTags: ["ManuProcess"],
     }),
 
     createManuProcessUpsert: builder.mutation<ManuProcess, CreateManuProcessDTO>({
@@ -43,6 +44,7 @@ const manuProcessExtraApi = manuProcessService.injectEndpoints({
         console.error("createManuProcessUpsert failed:", error);
         return error;
       },
+      invalidatesTags: ["ManuProcess"],
     }),
   }),
 });

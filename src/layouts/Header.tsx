@@ -1,13 +1,10 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Link } from "react-router";
 import LogoDefault from "../assets/logo_default.png";
-import ToggleSwitch from "../components/common/ToggleSwitch";
 import UserDropdown from "../components/header/UserDropdown";
 import { useSidebar } from "../providers/SidebarProvider";
 
 const Header: React.FC = () => {
-  const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
-
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
 
   const handleToggle = () => {
@@ -16,10 +13,6 @@ const Header: React.FC = () => {
     } else {
       toggleMobileSidebar();
     }
-  };
-
-  const toggleApplicationMenu = () => {
-    setApplicationMenuOpen(!isApplicationMenuOpen);
   };
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -77,7 +70,7 @@ const Header: React.FC = () => {
             />
           </Link>
 
-          <button
+          {/* <button
             onClick={toggleApplicationMenu}
             className="flex items-center justify-center w-10 h-10 text-gray-700 rounded-lg z-99999 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 lg:hidden"
           >
@@ -95,7 +88,7 @@ const Header: React.FC = () => {
                 fill="currentColor"
               />
             </svg>
-          </button>
+          </button> */}
 
           <div className="hidden lg:block">
             <form>
@@ -128,13 +121,11 @@ const Header: React.FC = () => {
           </div>
         </div>
         <div
-          className={`${
-            isApplicationMenuOpen ? "flex" : "hidden"
-          } items-center justify-between w-full gap-4 px-5 py-4 lg:flex shadow-theme-md lg:justify-end lg:px-0 lg:shadow-none`}
+          className={`flex items-center justify-between w-full gap-4 px-5 py-4 lg:flex shadow-theme-md lg:justify-end lg:px-0 lg:shadow-none`}
         >
-          <div className="flex items-center gap-2 2xsm:gap-3">
+          {/* <div className="flex items-center gap-2 2xsm:gap-3">
             <ToggleSwitch />
-          </div>
+          </div> */}
           <UserDropdown />
         </div>
       </div>

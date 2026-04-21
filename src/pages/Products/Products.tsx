@@ -1,9 +1,11 @@
 import { Image, message, Space } from "antd";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import CategorySelect from "../../components/product/CategorySelect";
 import DeleteButton from "../../components/table/DeleteButton";
 import EditButton from "../../components/table/EditButton";
+import PublishToggle from "../../components/table/PublishToggle";
 import TableShared from "../../components/table/TableShared";
 import { config } from "../../config";
 import { PATH } from "../../constants/path.constant";
@@ -12,13 +14,16 @@ import {
   useCreateProductMutation,
   useGetProductsQuery,
   useRemoveProductMutation,
+  useUpdateProductMutation,
 } from "../../services/product.service";
 import type { Product } from "../../types/product.type";
 
 export default function Products() {
   const navigate = useNavigate();
+  const [suppressNextRefetch, setSuppressNextRefetch] = useState(false);
 
   const [createProduct, { isLoading: isCreatingProduct }] = useCreateProductMutation();
+  const [updateProduct, { isLoading: isUpdatingProduct }] = useUpdateProductMutation();
 
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [paginationState, setPaginationState] = useState({
@@ -37,7 +42,13 @@ export default function Products() {
 
   const { data: categoryResults } = useGetCategoriesQuery({});
 
-  const [removeProduct, { isLoading: removingProduct }] = useRemoveProductMutation();
+  const [removeProduct] = useRemoveProductMutation();
+
+  useEffect(() => {
+    if (!fetchingProducts && suppressNextRefetch) {
+      setSuppressNextRefetch(false);
+    }
+  }, [fetchingProducts, suppressNextRefetch]);
 
   const columns = [
     {
@@ -45,26 +56,39 @@ export default function Products() {
       title: "Ảnh",
       render: (record: Product) => {
         const imageSrc = record?.thumbnailUrl ? config.imageBaseUrl + record?.thumbnailUrl : "";
-        return <Image src={imageSrc} alt="" height={50} />;
+        return <Image src={imageSrc || "https://placehold.co/50"} alt="" height={50} />;
       },
     },
     { key: "name", title: "Tên sản phẩm" },
     {
+      key: "category",
+      title: "Danh mục",
+      render: (record: Product) => record.category?.name || "—",
+    },
+    {
       key: "Price",
       title: "Giá gốc",
       render: (record: Product) => (
-        <div>{record.price.toLocaleString("vi-VN", { style: "currency", currency: "VND" })}</div>
+        <div>
+          {record.price.toLocaleString("vi-VN", { style: "currency", currency: "VND" })}{" "}
+          <s className="text-gray-400">
+            {record.salePrice?.toLocaleString("vi-VN", { style: "currency", currency: "VND" }) ||
+              "—"}
+          </s>
+        </div>
       ),
     },
     {
-      key: "salePrice",
-      title: "Giá khuyến mãi",
+      key: "isDraft",
+      title: "Trạng thái",
       render: (record: Product) => (
-        <div>
-          {record.salePrice
-            ? record.salePrice.toLocaleString("vi-VN", { style: "currency", currency: "VND" })
-            : "—"}
-        </div>
+        <PublishToggle
+          disabled={isUpdatingProduct}
+          published={!record.isDraft}
+          onChange={(published) => {
+            handleTogglePublish(record, published);
+          }}
+        />
       ),
     },
     {
@@ -108,6 +132,16 @@ export default function Products() {
     }
   };
 
+  const handleTogglePublish = async (product: Product, published: boolean) => {
+    try {
+      await updateProduct({ id: product.id, body: { isDraft: !published } }).unwrap();
+      setSuppressNextRefetch(true);
+    } catch (error) {
+      console.error("toggle publish failed:", error);
+      toast.error("Không thể thay đổi trạng thái hiển thị.");
+    }
+  };
+
   return (
     <div className="select-none">
       <TableShared<Product>
@@ -115,7 +149,7 @@ export default function Products() {
         rowKey={"id"}
         columns={columns}
         loading={productsLoading}
-        fetching={fetchingProducts}
+        fetching={fetchingProducts && !suppressNextRefetch}
         pagination={{
           current: paginationState.current,
           pageSize: paginationState.pageSize,

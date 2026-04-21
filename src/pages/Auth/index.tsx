@@ -2,7 +2,6 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import LogoDefault from "../../assets/logo_default.png";
 import GridShape from "../../components/common/GridShape";
-import ThemeTogglerTwo from "../../components/common/ThemeTogglerTwo";
 import { PATH } from "../../constants/path.constant";
 import { useAuth } from "../../providers/AuthProvider";
 
@@ -25,9 +24,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </div>
-        <div className="fixed z-50 hidden bottom-6 right-6 sm:block">
+        {/* <div className="fixed z-50 hidden bottom-6 right-6 sm:block">
           <ThemeTogglerTwo />
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -1,6 +1,8 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import useModal from "antd/es/modal/useModal";
 import { CiEdit, CiTrash } from "react-icons/ci";
+import { toast } from "react-toastify";
 import type { ManuProcessStep } from "../../types/manuProcess.type";
 
 type Props = {
@@ -11,6 +13,8 @@ type Props = {
 };
 
 export default function ManuProcessStepItem({ step, onEdit, onDelete, isOverlay }: Props) {
+  const [modal, contextHolder] = useModal();
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: step.id ?? step.title,
   });
@@ -18,6 +22,20 @@ export default function ManuProcessStepItem({ step, onEdit, onDelete, isOverlay 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition: isOverlay ? undefined : transition,
+  };
+
+  const handleDelete = () => {
+    modal.confirm({
+      title: "Xác nhận xóa",
+      centered: true,
+      content: "Bạn có chắc chắn muốn xóa bước này ?",
+      okText: "Xóa",
+      cancelText: "Hủy",
+      onOk: () => {
+        if (step?.id) onDelete(step.id);
+        else toast.error("Không thể xóa bước này vì chưa có ID. Vui lòng thử lại sau khi đã lưu.");
+      },
+    });
   };
 
   return (
@@ -60,7 +78,7 @@ export default function ManuProcessStepItem({ step, onEdit, onDelete, isOverlay 
             <CiEdit className="text-xl" />
           </button>
           <button
-            onClick={() => {}}
+            onClick={handleDelete}
             type="button"
             className="text-base p-1.5 rounded-lg hover:bg-red-50 transition-colors"
           >
@@ -68,6 +86,8 @@ export default function ManuProcessStepItem({ step, onEdit, onDelete, isOverlay 
           </button>
         </div>
       )}
+
+      {contextHolder}
     </div>
   );
 }

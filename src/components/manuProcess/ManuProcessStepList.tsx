@@ -11,6 +11,7 @@ import {
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import { SlDocs } from "react-icons/sl";
 import type { ManuProcessStep } from "../../types/manuProcess.type";
 import ManuProcessStepItem from "./ManuProcessStepItem";
 
@@ -31,7 +32,7 @@ export default function ManuProcessStepList({
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 }, // phải kéo 5px mới trigger — tránh click nhầm
+      activationConstraint: { distance: 5 },
     }),
   );
 
@@ -96,7 +97,9 @@ export default function ManuProcessStepList({
 
       {steps.length === 0 && (
         <div className="text-center py-16 text-gray-400">
-          <div className="text-4xl mb-3">📋</div>
+          <div className="text-4xl mb-3 flex justify-center">
+            <SlDocs />
+          </div>
           <p className="text-sm">Chưa có bước nào. Nhấn "Thêm bước" để bắt đầu.</p>
         </div>
       )}

@@ -1,4 +1,4 @@
-import { Form, Spin, Typography } from "antd";
+import { Form, Switch, Typography } from "antd";
 import { useForm, useWatch } from "antd/es/form/Form";
 import "ckeditor5/ckeditor5.css";
 import { useLayoutEffect, useMemo } from "react";
@@ -11,6 +11,7 @@ import TextArea from "../../components/form/input/TextArea";
 import Select from "../../components/form/Select";
 import ProductUploadImgBox from "../../components/product/ProductUploadImgBox";
 import Button from "../../components/ui/button/Button";
+import SplitButton from "../../components/ui/button/SplitButton";
 import { PATH } from "../../constants/path.constant";
 import { useGetCategoriesQuery } from "../../services/category.service";
 import { useGetProductByIdQuery, useUpdateProductMutation } from "../../services/product.service";
@@ -25,6 +26,7 @@ interface ProductFormTypes {
   salePrice: Number;
   categoryId: string;
   summary: string;
+  isDraft: boolean;
 }
 
 export default function ProductDetails() {
@@ -87,14 +89,18 @@ export default function ProductDetails() {
     categoryId: Number(values.categoryId),
     summary: values.summary,
     thumbnailUrl: null,
+    isDraft: values.isDraft,
   });
 
-  const handleSave = async () => {
+  const handleSave = async (isPublished: boolean) => {
     try {
       const values = await form.validateFields();
 
       if (!isCreateMode) {
-        await updateProduct({ id: productId, body: buildPayload(values) }).unwrap();
+        await updateProduct({
+          id: productId,
+          body: buildPayload({ ...values, isDraft: !isPublished }),
+        }).unwrap();
         toast.success("Đã cập nhật sản phẩm.");
       }
     } catch (error: any) {
@@ -107,11 +113,6 @@ export default function ProductDetails() {
 
   return (
     <div className="space-y-6">
-      {fetchingProduct && (
-        <div className="fixed top-0 left-0 right-0 -bottom-20 bg-gray-100/50 z-1000 flex items-center justify-center">
-          <Spin spinning={fetchingProduct} size="medium" />
-        </div>
-      )}
       <div className="flex items-center justify-between">
         <div>
           <Title level={4} className="mb-1!">
@@ -125,9 +126,11 @@ export default function ProductDetails() {
           <Button variant="outline" onClick={() => navigate(PATH.PRODUCT)}>
             Quay lại
           </Button>
-          <Button onClick={() => handleSave()} loading={isLoading || updating}>
-            Lưu sản phẩm
-          </Button>
+          <SplitButton
+            loading={isLoading || updating}
+            onSave={handleSave}
+            isDraft={productResult?.data?.isDraft}
+          />
         </div>
       </div>
 
@@ -135,6 +138,10 @@ export default function ProductDetails() {
         <Form form={form} layout="vertical">
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="space-y-1">
+              <Form.Item name="isDraft" hidden>
+                <Switch />
+              </Form.Item>
+
               <Form.Item
                 label="Tên sản phẩm"
                 name="name"

@@ -1,8 +1,8 @@
 import { Spin } from "antd";
 import { useState } from "react";
+import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { EyeCloseIcon, EyeIcon } from "../../assets/icons";
 import { PATH } from "../../constants/path.constant";
 import { useAuth } from "../../providers/AuthProvider";
 import { useSignInMutation } from "../../services/auth.service";
@@ -106,9 +106,9 @@ export default function SignInForm() {
                       className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
                     >
                       {showPassword ? (
-                        <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                        <IoEyeOutline className="fill-gray-500 dark:fill-gray-400 size-5" />
                       ) : (
-                        <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                        <IoEyeOffOutline className="fill-gray-500 dark:fill-gray-400 size-5" />
                       )}
                     </span>
                   </div>

@@ -5,11 +5,11 @@ import Input from "../form/input/InputField";
 
 type HeroPageKey = "home" | "about" | "manuProcess";
 
-type HeroDraft = {
-  title: string;
-  content: string;
-  file: File | null;
-};
+// type HeroDraft = {
+//   title: string;
+//   content: string;
+//   file: File | null;
+// };
 
 type HeroPage = {
   key: HeroPageKey;
