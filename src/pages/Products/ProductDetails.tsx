@@ -1,11 +1,10 @@
 import { Form, Switch, Typography } from "antd";
 import { useForm, useWatch } from "antd/es/form/Form";
 import "ckeditor5/ckeditor5.css";
-import { useLayoutEffect, useMemo } from "react";
+import { lazy, Suspense, useLayoutEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import ComponentCard from "../../components/common/ComponentCard";
-import RichTextEditor from "../../components/common/RichTextEditor";
 import Input from "../../components/form/input/InputField";
 import TextArea from "../../components/form/input/TextArea";
 import Select from "../../components/form/Select";
@@ -16,6 +15,7 @@ import { PATH } from "../../constants/path.constant";
 import { useGetCategoriesQuery } from "../../services/category.service";
 import { useGetProductByIdQuery, useUpdateProductMutation } from "../../services/product.service";
 import type { CreateProductDTO } from "../../types/product.type";
+const RichTextEditor = lazy(() => import("../../components/common/RichTextEditor"));
 
 const { Title, Text } = Typography;
 
@@ -197,14 +197,16 @@ export default function ProductDetails() {
           </section>
 
           <section className="mt-4">
-            <Form.Item label="Mô tả chi tiết" name="description">
-              <RichTextEditor
-                value={descriptionValue}
-                imageIds={(descriptionImageIds as string[]) || []}
-                ownerId={productId!}
-                type="prod-desc"
-              />
-            </Form.Item>
+            <Suspense fallback={<div>Đang tải mô tả......</div>}>
+              <Form.Item label="Mô tả chi tiết" name="description">
+                <RichTextEditor
+                  value={descriptionValue}
+                  imageIds={(descriptionImageIds as string[]) || []}
+                  ownerId={productId!}
+                  type="prod-desc"
+                />
+              </Form.Item>
+            </Suspense>
           </section>
         </Form>
       </ComponentCard>

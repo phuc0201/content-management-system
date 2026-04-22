@@ -1,14 +1,15 @@
 import { Form, Typography } from "antd";
 import { useForm } from "antd/es/form/Form";
-import { useLayoutEffect } from "react";
+import { lazy, Suspense, useLayoutEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import RichTextEditor from "../../components/common/RichTextEditor";
 import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
 import { PATH } from "../../constants/path.constant";
 import { useGetPolicyByIdQuery, useUpdatePolicyMutation } from "../../services/policy.service";
 import type { Policy } from "../../types/policy.type";
+const RichTextEditor = lazy(() => import("../../components/common/RichTextEditor"));
+
 const { Title, Text } = Typography;
 
 export default function PolicyDetails() {
@@ -74,18 +75,21 @@ export default function PolicyDetails() {
       >
         <Input placeholder="Nhập tiêu đề chính sách" disabled={isUpdating || isLoading} />
       </Form.Item>
-      <Form.Item
-        label="Nội dung"
-        name="content"
-        required
-        rules={[{ required: true, message: "Vui lòng nhập nội dung chính sách" }]}
-      >
-        <RichTextEditor
-          type="policy"
-          ownerId={id}
-          imageIds={(policyData?.data?.images || []).map((i) => i?.id as string)}
-        />
-      </Form.Item>
+
+      <Suspense fallback={<div>Đang tải nội dung...</div>}>
+        <Form.Item
+          label="Nội dung"
+          name="content"
+          required
+          rules={[{ required: true, message: "Vui lòng nhập nội dung chính sách" }]}
+        >
+          <RichTextEditor
+            type="policy"
+            ownerId={id}
+            imageIds={(policyData?.data?.images || []).map((i) => i?.id as string)}
+          />
+        </Form.Item>
+      </Suspense>
     </Form>
   );
 }

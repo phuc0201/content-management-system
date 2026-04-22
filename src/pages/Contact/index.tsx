@@ -1,7 +1,6 @@
 import { Form, Typography } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import Map from "../../components/common/Map";
 import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
 import { SiteConfigType } from "../../constants/siteConfig.constant";
@@ -12,6 +11,8 @@ import {
 } from "../../services/siteConfig.service";
 import type { GoongGeocodeResult } from "../../types/goong.type";
 import type { UpsertSiteConfigBody } from "../../types/siteConfig.type";
+
+const MapComponent = lazy(() => import("../../components/common/Map"));
 
 const { Title, Text } = Typography;
 
@@ -343,12 +344,16 @@ export default function Contact() {
         </div>
 
         <div className="w-full h-150! min-h-150">
-          <Map
-            center={selectedPosition}
-            markerPosition={selectedPosition}
-            onPositionChange={handleMapPositionChange}
-            onInteractionModeChange={handleMapModeChange}
-          />
+          <Suspense fallback={<div>Đang tải bản đồ</div>}>
+            {
+              <MapComponent
+                center={selectedPosition}
+                markerPosition={selectedPosition}
+                onPositionChange={handleMapPositionChange}
+                onInteractionModeChange={handleMapModeChange}
+              />
+            }
+          </Suspense>
         </div>
       </div>
     </div>

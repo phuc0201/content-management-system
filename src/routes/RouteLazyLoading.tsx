@@ -101,13 +101,6 @@ const appRoutes: AppRouteItem[] = [
         breadcrumb: "Chi tiết",
         component: ProductDetailsPage,
       },
-      {
-        key: `${PATH.PRODUCT}-create`,
-        path: "create",
-        title: "Tạo mới sản phẩm",
-        breadcrumb: "Tạo mới",
-        component: ProductDetailsPage,
-      },
     ],
   },
   {

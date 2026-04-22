@@ -1,10 +1,9 @@
 import { Form, Typography } from "antd";
 import { useForm } from "antd/es/form/Form";
 import "ckeditor5/ckeditor5-content.css";
-import { useLayoutEffect, useMemo } from "react";
+import { lazy, Suspense, useLayoutEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import RichTextEditor from "../../components/common/RichTextEditor";
 import UploadImageBox from "../../components/common/UpdloadImageBox";
 import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
@@ -13,6 +12,7 @@ import { config } from "../../config";
 import { PATH } from "../../constants/path.constant";
 import { useGetBlogByIdQuery, useUpdateBlogMutation } from "../../services/blog.service";
 import { useUploadImageMutation } from "../../services/upload.service";
+const RichTextEditor = lazy(() => import("../../components/common/RichTextEditor"));
 
 const { Title, Text } = Typography;
 
@@ -123,18 +123,20 @@ export default function BlogDetails() {
           <UploadImageBox maxSizeMB={10} />
         </Form.Item>
 
-        <Form.Item
-          label="Nội dung"
-          name="content"
-          required
-          rules={[{ required: true, message: "Vui lòng nhập nội dung bài viết." }]}
-        >
-          <RichTextEditor
-            type="blog"
-            ownerId={blogId}
-            imageIds={(contentImageIds as string[]) || []}
-          />
-        </Form.Item>
+        <Suspense fallback={<div>Đang tải editor...</div>}>
+          <Form.Item
+            label="Nội dung"
+            name="content"
+            required
+            rules={[{ required: true, message: "Vui lòng nhập nội dung bài viết." }]}
+          >
+            <RichTextEditor
+              type="blog"
+              ownerId={blogId}
+              imageIds={(contentImageIds as string[]) || []}
+            />
+          </Form.Item>
+        </Suspense>
       </section>
     </Form>
   );
