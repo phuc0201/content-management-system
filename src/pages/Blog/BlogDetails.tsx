@@ -1,7 +1,7 @@
 import { Form, Typography } from "antd";
 import { useForm } from "antd/es/form/Form";
 import "ckeditor5/ckeditor5-content.css";
-import { lazy, Suspense, useLayoutEffect, useMemo } from "react";
+import { lazy, Suspense, useLayoutEffect, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import UploadImageBox from "../../components/common/UpdloadImageBox";
@@ -23,11 +23,12 @@ export default function BlogDetails() {
 
   const blogId = id;
 
-  const { data: blogResult } = useGetBlogByIdQuery(blogId!);
+  const { data: blogResult, isLoading: isBlogLoading } = useGetBlogByIdQuery(blogId!);
 
   const [updateBlog, { isLoading: updating }] = useUpdateBlogMutation();
 
   const [uploadImage] = useUploadImageMutation();
+  const latestUploadedThumbnailUrlRef = useRef<string | null>(null);
 
   const contentImageIds = useMemo(
     () =>
@@ -41,14 +42,22 @@ export default function BlogDetails() {
     try {
       if (!blogId) return;
 
-      uploadImage({
+      const result = await uploadImage({
         files: [file],
         type: "blog-thumb",
         id: blogId,
       }).unwrap();
+
+      const uploadedUrl = result?.data?.[0]?.url;
+      if (!uploadedUrl) return null;
+
+      const absoluteUrl = config.imageBaseUrl + uploadedUrl;
+      latestUploadedThumbnailUrlRef.current = absoluteUrl;
+      return absoluteUrl;
     } catch (error) {
       console.error("Error uploading thumbnail:", error);
       toast.error("Đã có lỗi xảy ra khi tải ảnh lên. Vui lòng thử lại.");
+      return null;
     }
   };
 
@@ -58,15 +67,21 @@ export default function BlogDetails() {
 
       const values = await form.validateFields();
       const { thumbnailUrl, ...payload } = values;
+      let uploadedThumbnailUrl: string | null = null;
+
       if (
         thumbnailUrl &&
         thumbnailUrl !== blogResult?.data?.thumbnailUrl &&
         thumbnailUrl instanceof File
       ) {
-        handleUploadThumbnail(thumbnailUrl);
+        uploadedThumbnailUrl = await handleUploadThumbnail(thumbnailUrl);
       }
 
       await updateBlog({ id: blogId!, body: { ...payload, isDraft: !isPublished } }).unwrap();
+
+      if (uploadedThumbnailUrl) {
+        form.setFieldValue("thumbnailUrl", uploadedThumbnailUrl);
+      }
 
       toast.success("Cập nhật bài viết thành công!");
     } catch (error) {
@@ -78,9 +93,19 @@ export default function BlogDetails() {
   useLayoutEffect(() => {
     if (blogResult?.data) {
       const { thumbnailUrl, ...rest } = blogResult.data;
+      const serverThumbnailUrl = thumbnailUrl ? config.imageBaseUrl + thumbnailUrl : null;
+      const preferredThumbnailUrl = latestUploadedThumbnailUrlRef.current ?? serverThumbnailUrl;
+
+      if (
+        latestUploadedThumbnailUrlRef.current &&
+        serverThumbnailUrl === latestUploadedThumbnailUrlRef.current
+      ) {
+        latestUploadedThumbnailUrlRef.current = null;
+      }
+
       form.setFieldsValue({
         ...rest,
-        thumbnailUrl: thumbnailUrl ? config.imageBaseUrl + thumbnailUrl : null,
+        thumbnailUrl: preferredThumbnailUrl,
       });
     }
   }, [blogResult, form]);
@@ -101,7 +126,11 @@ export default function BlogDetails() {
           <Button variant="outline" onClick={() => navigate(PATH.BLOG)}>
             Quay lại
           </Button>
-          <SplitButton onSave={handleSave} isDraft={!!blogResult?.data?.isDraft} />
+          <SplitButton
+            onSave={handleSave}
+            isDraft={!!blogResult?.data?.isDraft}
+            loading={updating || isBlogLoading}
+          />
         </div>
       </div>
 

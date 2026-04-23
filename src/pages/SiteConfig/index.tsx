@@ -1,5 +1,5 @@
 import { Tabs, Typography } from "antd";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import AnnouncementManager from "../../components/siteconfig/AnnouncementManager";
 import BrandIdentitySettings from "../../components/siteconfig/BrandIdentitySettings";
 import ContactIcon from "../../components/siteconfig/ContactIcon";
@@ -20,16 +20,38 @@ export default function SiteConfig() {
   const [activeTab, setActiveTab] = useState("brand");
   const { data: siteConfigResult } = useGetSiteConfigsQuery({});
 
-  const brandIdetityConfig = {
-    favicon:
-      siteConfigResult?.data?.find((config) => config.type === SiteConfigType.Favicon) || null,
-    mainLogo:
-      siteConfigResult?.data?.find((config) => config.type === SiteConfigType.MainLogo) || null,
-    subLogo:
-      siteConfigResult?.data?.find((config) => config.type === SiteConfigType.SubLogo) || null,
-    colorPrimary:
-      siteConfigResult?.data?.find((config) => config.type === SiteConfigType.ColorPrimary) || null,
-  };
+  const brandIdetityConfig = useMemo(() => {
+    return {
+      favicon:
+        siteConfigResult?.data?.find((config) => config.type === SiteConfigType.Favicon) || null,
+      mainLogo:
+        siteConfigResult?.data?.find((config) => config.type === SiteConfigType.MainLogo) || null,
+      subLogo:
+        siteConfigResult?.data?.find((config) => config.type === SiteConfigType.SubLogo) || null,
+      colorPrimary:
+        siteConfigResult?.data?.find((config) => config.type === SiteConfigType.ColorPrimary) ||
+        null,
+    };
+  }, [siteConfigResult]);
+
+  const heroSection = useMemo(() => {
+    return {
+      home:
+        siteConfigResult?.data?.find((config) => config.type === SiteConfigType.SectionHome) ||
+        null,
+      about:
+        siteConfigResult?.data?.find((config) => config.type === SiteConfigType.SectionAbout) ||
+        null,
+      manuProcess:
+        siteConfigResult?.data?.find(
+          (config) => config.type === SiteConfigType.SectionManuProcess,
+        ) || null,
+    };
+  }, [siteConfigResult]);
+
+  const contactIcons = useMemo(() => {
+    return siteConfigResult?.data?.filter((config) => config.type === SiteConfigType.Contact) || [];
+  }, [siteConfigResult]);
 
   const tabs: TabConfig[] = [
     {
@@ -40,7 +62,7 @@ export default function SiteConfig() {
     {
       key: "hero",
       label: "Ảnh đầu trang",
-      render: () => <HeroSectionManager />,
+      render: () => <HeroSectionManager {...heroSection} />,
     },
     {
       key: "announce",
@@ -55,7 +77,7 @@ export default function SiteConfig() {
     {
       key: "contact",
       label: "Icon liên hệ",
-      render: () => <ContactIcon />,
+      render: () => <ContactIcon contacts={contactIcons} />,
     },
   ];
 

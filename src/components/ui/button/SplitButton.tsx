@@ -55,7 +55,7 @@ export default function SplitButton({
         type="button"
         disabled={loading}
         onClick={() => onSave(isPub)}
-        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-l-lg hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+        className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-l-lg hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors`}
       >
         {isPub ? <FiUpload size={14} /> : <FiEdit3 size={14} />}
         {isPub ? "Lưu & Đăng" : "Lưu nháp"}

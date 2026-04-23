@@ -65,6 +65,14 @@ export default function BrandIdentitySettings(props: BrandIdentitySettingsProps)
     [SiteConfigType.Favicon]: props?.favicon?.images?.[0] ?? null,
   });
 
+  useLayoutEffect(() => {
+    currentImages.current = {
+      [SiteConfigType.MainLogo]: props?.mainLogo?.images?.[0] ?? null,
+      [SiteConfigType.SubLogo]: props?.subLogo?.images?.[0] ?? null,
+      [SiteConfigType.Favicon]: props?.favicon?.images?.[0] ?? null,
+    };
+  }, [props?.mainLogo?.images, props?.subLogo?.images, props?.favicon?.images]);
+
   const handleSave = async (values: any) => {
     try {
       const colorValue = values?.[SiteConfigType.ColorPrimary];
@@ -78,9 +86,18 @@ export default function BrandIdentitySettings(props: BrandIdentitySettingsProps)
       await Promise.all(
         imageFields.map(async ({ key, configId }) => {
           const value = values?.[key];
+          const existingImage = currentImages.current[key];
+
+          if (value == null) {
+            if (existingImage?.id) {
+              await deleteImage({ id: existingImage.id }).unwrap();
+              currentImages.current[key] = null;
+            }
+            return;
+          }
+
           if (!(value instanceof File)) return;
 
-          const existingImage = currentImages.current[key];
           if (existingImage?.id) {
             await deleteImage({ id: existingImage.id }).unwrap();
           }
@@ -171,16 +188,6 @@ export default function BrandIdentitySettings(props: BrandIdentitySettingsProps)
               label={
                 <span className="font-medium text-gray-700 dark:text-gray-200">{field.label}</span>
               }
-              // rules={[
-              //   {
-              //     validator: (_, value) => {
-              //       if (!value) {
-              //         return Promise.reject(new Error(`Vui lòng tải lên ${field.label}`));
-              //       }
-              //       return Promise.resolve();
-              //     },
-              //   },
-              // ]}
             >
               <UploadImageBox maxSizeMB={field.maxSizeMB} />
             </Form.Item>

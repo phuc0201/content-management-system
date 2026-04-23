@@ -11,6 +11,7 @@ export type SiteConfigItem = {
 };
 
 export type UpsertSiteConfigBody = {
+  id?: string;
   text?: string;
   title?: string;
   content?: string;

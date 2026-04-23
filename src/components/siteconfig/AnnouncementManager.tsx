@@ -2,6 +2,8 @@ import { CheckOutlined, CloseOutlined, PlusOutlined } from "@ant-design/icons";
 import { Empty, Typography } from "antd";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { useUpsertSiteConfigByTypeMutation } from "../../services/siteConfig.service";
+import type { SiteConfigItem } from "../../types/siteConfig.type";
 import Input from "../form/input/InputField";
 import DeleteButton from "../table/DeleteButton";
 import EditButton from "../table/EditButton";
@@ -15,32 +17,19 @@ interface Announcement {
 }
 
 export default function AnnouncementManager() {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([
-    { id: "1", text: "Free shipping on orders over $75 – Shop Now" },
-    { id: "2", text: "New arrivals every week – Explore the collection" },
-    { id: "3", text: "Use code WELCOME10 for 10% off your first order" },
-  ]);
+  const [announcements, setAnnouncements] = useState<SiteConfigItem[]>([]);
 
   const [newText, setNewText] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+
+  const [updateSiteConfigByType, { isLoading: upserting }] = useUpsertSiteConfigByTypeMutation();
 
   const addAnnouncement = async () => {
     const trimmed = newText.trim();
     if (!trimmed) {
       toast.error("Vui lòng nhập nội dung thông báo.");
       return;
-    }
-
-    const tempId = Date.now().toString();
-    const newItem: Announcement = { id: tempId, text: trimmed };
-    setAnnouncements((prev) => [...prev, newItem]);
-    setNewText("");
-
-    try {
-      toast.success("Đã thêm thông báo.");
-    } catch (e) {
-      toast.warning("Thêm thông báo (chỉ UI) — API chưa cấu hình.");
     }
   };
 
@@ -147,8 +136,8 @@ export default function AnnouncementManager() {
                       </>
                     ) : (
                       <>
-                        <EditButton onClick={() => startEdit(item)} />
-                        <DeleteButton onClick={() => removeAnnouncement(item.id)} />
+                        <EditButton />
+                        <DeleteButton />
                       </>
                     )}
                   </div>

@@ -1,7 +1,12 @@
 import { Typography } from "antd";
-import { useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { PlusIcon } from "../../assets/icons";
+import { config } from "../../config";
+import { SiteConfigType } from "../../constants/siteConfig.constant";
+import { useUpsertSiteConfigByTypeMutation } from "../../services/siteConfig.service";
+import { useUploadImageMutation } from "../../services/upload.service";
+import type { SiteConfigItem } from "../../types/siteConfig.type";
 import UploadImageBox from "../common/UpdloadImageBox";
 import Input from "../form/input/InputField";
 import Button from "../ui/button/Button";
@@ -16,45 +21,90 @@ type IconItem = {
   preview?: string;
 };
 
-// ─── MOCK DATA ───────────────────────────────────────────────────────────────
-const MOCK_ICONS: IconItem[] = [
-  { id: "1", name: "Facebook", link: "https://facebook.com/example" },
-  { id: "2", name: "Instagram", link: "https://instagram.com/example" },
-  { id: "3", name: "Zalo", link: "https://zalo.me/example" },
-];
+type ContactIconProps = {
+  contacts: SiteConfigItem[];
+};
 
-// Giả lập gọi API: delay 600ms rồi trả về thành công
-const fakeApiCall = () => new Promise<void>((resolve) => setTimeout(resolve, 600));
-// ─────────────────────────────────────────────────────────────────────────────
+const toPreviewUrl = (item: SiteConfigItem) => {
+  const imageUrl = item?.images?.[0]?.url;
+  return imageUrl ? config.imageBaseUrl + imageUrl : undefined;
+};
 
-export default function ContactIcon() {
+export default function ContactIcon({ contacts }: ContactIconProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [link, setLink] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Khởi tạo bằng mock data thay vì mảng rỗng
-  const [icons, setIcons] = useState<IconItem[]>(MOCK_ICONS);
+  const [imageValue, setImageValue] = useState<File | string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  const [icons, setIcons] = useState<IconItem[]>([]);
+  const [upsertSiteConfigByType, { isLoading: upserting }] = useUpsertSiteConfigByTypeMutation();
+  const [uploadImage, { isLoading: uploading }] = useUploadImageMutation();
+
+  const isSaving = upserting || uploading;
+
+  const mappedContacts = useMemo(
+    () =>
+      contacts.map((item) => ({
+        id: item.id,
+        name: item.title ?? "",
+        link: item.link ?? "",
+        preview: toPreviewUrl(item),
+      })),
+    [contacts],
+  );
+
+  useLayoutEffect(() => {
+    setIcons(mappedContacts);
+  }, [mappedContacts]);
 
   function resetForm() {
     setName("");
     setLink("");
-    setFile(null);
+    setImageValue(null);
     setEditingId(null);
   }
 
   async function handleSave() {
-    if (!name.trim()) {
+    const trimmedName = name.trim();
+    const trimmedLink = link.trim();
+
+    if (!trimmedName) {
       toast.warning("Vui lòng nhập tên icon.");
       return;
     }
 
-    setIsSaving(true);
+    if (!trimmedLink) {
+      toast.warning("Vui lòng nhập đường link icon.");
+      return;
+    }
+
     try {
-      // TODO: thay fakeApiCall() bằng call API thực (POST / PUT)
-      await fakeApiCall();
+      let targetId = editingId;
+      let uploadedPreview: string | undefined;
+
+      const upserted = await upsertSiteConfigByType({
+        type: SiteConfigType.Contact,
+        body: {
+          // id: editingId ?? undefined,
+          title: trimmedName,
+          link: trimmedLink,
+        },
+      }).unwrap();
+
+      targetId = upserted?.id ?? targetId;
+
+      if (targetId && imageValue instanceof File) {
+        const uploaded = await uploadImage({
+          files: [imageValue],
+          type: "site-config",
+          id: targetId,
+        }).unwrap();
+        const uploadedUrl = uploaded?.data?.[0]?.url;
+        if (uploadedUrl) {
+          uploadedPreview = config.imageBaseUrl + uploadedUrl;
+        }
+      }
 
       if (editingId) {
         setIcons((prev) =>
@@ -62,18 +112,24 @@ export default function ContactIcon() {
             it.id === editingId
               ? {
                   ...it,
-                  name,
-                  link,
-                  preview: file ? URL.createObjectURL(file) : it.preview,
+                  name: trimmedName,
+                  link: trimmedLink,
+                  preview: uploadedPreview ?? it.preview,
                 }
               : it,
           ),
         );
         toast.success("Đã cập nhật icon.");
       } else {
-        const id = String(Date.now());
-        const preview = file ? URL.createObjectURL(file) : undefined;
-        setIcons((prev) => [...prev, { id, name, link, preview }]);
+        setIcons((prev) => [
+          ...prev,
+          {
+            id: targetId || String(Date.now()),
+            name: trimmedName,
+            link: trimmedLink,
+            preview: uploadedPreview,
+          },
+        ]);
         toast.success("Đã thêm icon.");
       }
 
@@ -82,8 +138,6 @@ export default function ContactIcon() {
     } catch (err) {
       console.error(err);
       toast.error("Đã có lỗi xảy ra.");
-    } finally {
-      setIsSaving(false);
     }
   }
 
@@ -91,10 +145,11 @@ export default function ContactIcon() {
     setEditingId(item.id);
     setName(item.name);
     setLink(item.link);
-    setFile(null);
+    setImageValue(item.preview ?? null);
     setOpen(true);
   }
 
+  // Tính năng này chưa có API nên tạm thời bỏ qua
   function handleDelete(item: IconItem) {
     if (!confirm(`Xóa icon "${item.name}" ?`)) return;
     // TODO: gọi API DELETE ở đây trước khi cập nhật state
@@ -219,7 +274,11 @@ export default function ContactIcon() {
               Hình ảnh Icon
             </label>
             <div className="w-full">
-              <UploadImageBox onChange={(f: File | null) => setFile(f)} maxSizeMB={2} />
+              <UploadImageBox
+                value={imageValue}
+                onChange={(f: File | null) => setImageValue(f)}
+                maxSizeMB={2}
+              />
             </div>
           </div>
 
