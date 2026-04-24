@@ -42,7 +42,7 @@ export function buildBaseEndpoints<
     update: builder.mutation<ApiResponse<TEntity>, { id: string | number; body: TUpdateDTO }>({
       query: ({ id, body }) => ({
         url: `${resource}/${id}`,
-        method: "PATCH",
+        method: "PUT",
         data: body,
       }),
       invalidatesTags: (_result, _error, { id }) => [{ type: tag, id: id }],

@@ -3,7 +3,10 @@ export interface ManuProcessStep extends Record<string, unknown> {
   title: string;
   content: string;
   images?: ManuStepImage[];
-  image?: File | string | null;
+  imageId?: string;
+  image?: ManuStepImage;
+  imagePreview?: string | File | null;
+  index?: number;
 }
 
 export interface ManuProcess extends Record<string, unknown> {
@@ -12,7 +15,7 @@ export interface ManuProcess extends Record<string, unknown> {
   steps: ManuProcessStep[];
 }
 
-export type CreateManuProcessDTO = ManuProcess;
+export type CreateManuProcessDTO = Omit<ManuProcess, "steps">;
 export type UpdateManuProcessDTO = Partial<CreateManuProcessDTO>;
 
 export interface ManuStepImage {

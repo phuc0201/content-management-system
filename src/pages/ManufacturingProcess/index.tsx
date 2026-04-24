@@ -1,6 +1,7 @@
 import { Form, Typography } from "antd";
 import { useForm } from "antd/es/form/Form";
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import ComponentCard from "../../components/common/ComponentCard";
 import Input from "../../components/form/input/InputField";
@@ -10,24 +11,36 @@ import ManuProcessStepModal from "../../components/manuProcess/ManuProcessStepMo
 import Button from "../../components/ui/button/Button";
 import useModal from "../../hooks/useModal";
 import {
-  useCreateManuProcessUpsertMutation,
+  manuProcessService,
+  useCreateManuStepMutation,
   useGetManuProcessQuery,
+  useUpdateManuStepMutation,
+  useUpsertManuProcessMutation,
 } from "../../services/manuProcess.service";
+import { useDeleteSiteConfigMutation } from "../../services/siteConfig.service";
 import { useDeleteImageMutation, useUploadImageMutation } from "../../services/upload.service";
-import type { ManuProcess, ManuProcessStep } from "../../types/manuProcess.type";
+import type { ManuProcess, ManuProcessStep, ManuStepImage } from "../../types/manuProcess.type";
 
 const { Title, Text } = Typography;
 
 export default function ManufacturingProcessPage() {
   const [form] = useForm();
+  const dispatch = useDispatch();
+
   const { open, openModal, closeModal, data: dataEditing } = useModal<ManuProcessStep>();
   const [orderedSteps, setOrderedSteps] = useState<ManuProcessStep[]>([]);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const isSavingOrderRef = useRef(false);
+  const serverOrderRef = useRef<string[]>([]);
 
-  const { data: manuProcess, isFetching, isLoading: manuProcessLoading } = useGetManuProcessQuery();
+  const { data: manuProcess, isLoading: manuProcessLoading } = useGetManuProcessQuery();
 
-  const [createManuProcessUpsert, { isLoading: isCreating }] = useCreateManuProcessUpsertMutation();
-  const [uploadImage] = useUploadImageMutation();
+  const [createManuProcessUpsert, { isLoading: isUpserting }] = useUpsertManuProcessMutation();
+  const [createManuStep] = useCreateManuStepMutation();
+  const [updateManuStep, { isLoading: isStepUpdating }] = useUpdateManuStepMutation();
+  const [uploadImage, { isLoading: isImageUploading }] = useUploadImageMutation();
   const [deleteImage] = useDeleteImageMutation();
+  const [deleteSiteConfig] = useDeleteSiteConfigMutation();
 
   const applyServerManuData = (data: ManuProcess) => {
     form.setFieldsValue({
@@ -35,12 +48,22 @@ export default function ManufacturingProcessPage() {
       intro: data.intro,
     });
 
+    serverOrderRef.current = (data.steps || []).map((step) => step.id ?? "");
     setOrderedSteps(data.steps || []);
   };
 
+  const getStepOrderKey = (steps: ManuProcessStep[]) =>
+    steps.map((step) => step.id ?? "").join("|");
+
+  const isOrderDirty = getStepOrderKey(orderedSteps) !== serverOrderRef.current.join("|");
+
   const handleSave = async (values: ManuProcess) => {
     try {
-      await createManuProcessUpsert(values).unwrap();
+      const payload = {
+        title: values.title,
+        intro: values.intro,
+      };
+      await createManuProcessUpsert(payload).unwrap();
       toast.success("Đã lưu quy trình sản xuất.");
     } catch (error) {
       console.error(error);
@@ -48,65 +71,133 @@ export default function ManufacturingProcessPage() {
     }
   };
 
-  const buildNewStepPayload = (values: ManuProcess, step: ManuProcessStep): ManuProcess => ({
-    ...values,
-    steps: [...(manuProcess?.steps || []), { title: step.title, content: step.content }],
-  });
+  const handleSaveOrder = async () => {
+    if (!manuProcess || !isOrderDirty) return;
 
-  const buildUpdatedStepPayload = (values: ManuProcess, step: ManuProcessStep): ManuProcess => ({
-    ...values,
-    steps:
-      manuProcess?.steps.map((s) =>
-        s.id === dataEditing?.id ? { id: s.id, title: step.title, content: step.content } : s,
-      ) || [],
-  });
+    try {
+      isSavingOrderRef.current = true;
+      setIsSavingOrder(true);
+
+      for (const [position, step] of orderedSteps.entries()) {
+        if (!step.id) {
+          throw new Error(`Step missing id at position ${position}`);
+        }
+
+        await updateManuStep({
+          id: step.id,
+          title: step.title,
+          content: step.content,
+          index: position + 1,
+        }).unwrap();
+      }
+
+      serverOrderRef.current = orderedSteps.map((step) => step.id ?? "");
+      toast.success("Đã lưu thứ tự các bước.");
+    } catch (error) {
+      console.error("save reorder failed:", error);
+      toast.error("Không thể lưu thứ tự các bước.");
+    } finally {
+      isSavingOrderRef.current = false;
+      setIsSavingOrder(false);
+    }
+  };
 
   const uploadStepImage = async (image: File, stepId: string) => {
     try {
-      uploadImage({ files: [image], type: "manu-process", id: stepId }).unwrap();
+      return await uploadImage({ files: [image], type: "manu-process", id: stepId }).unwrap();
     } catch (error) {
       console.error("Error uploading step image:", error);
       toast.error("Đã có lỗi xảy ra khi tải ảnh bước lên. Vui lòng thử lại.");
     }
   };
 
-  const handleAddNewStep = async (values: ManuProcess, step: ManuProcessStep) => {
-    const payload = buildNewStepPayload(values, step);
-    const upserted = await createManuProcessUpsert(payload).unwrap();
+  const syncStepImage = (stepId: string, stepImage: ManuStepImage) => {
+    dispatch(
+      (manuProcessService.util.updateQueryData as any)(
+        "getManuProcess",
+        undefined,
+        (draft: ManuProcess | null) => {
+          if (!draft) return;
+          const stepIndex = draft.steps.findIndex((step: ManuProcessStep) => step.id === stepId);
+          if (stepIndex !== -1) {
+            draft.steps[stepIndex].image = stepImage;
+            draft.steps[stepIndex].imageId = stepImage.id;
+          }
+        },
+      ),
+    );
+  };
 
-    const newStepFromServer = upserted?.steps.at(-1);
-    if (!newStepFromServer?.id) return;
+  const handleAddNewStep = async (step: ManuProcessStep) => {
+    try {
+      const payload = {
+        title: step.title,
+        content: step.content,
+      };
 
-    toast.success("Đã thêm bước mới vào quy trình sản xuất.");
+      const createdStep = await createManuStep(payload).unwrap();
 
-    if (step.image instanceof File) {
-      uploadStepImage(step.image, newStepFromServer.id);
+      if (step?.imagePreview instanceof File && createdStep?.data?.id) {
+        const uploadedImage = await uploadStepImage(step.imagePreview, createdStep.data.id);
+        dispatch(
+          (manuProcessService.util.updateQueryData as any)(
+            "getManuProcess",
+            undefined,
+            (draft: ManuProcess | null) => {
+              if (!draft) return;
+              draft.steps.push({
+                id: createdStep?.data?.id,
+                title: step.title,
+                content: step.content,
+                image: undefined,
+              });
+            },
+          ),
+        );
+        if (uploadedImage?.data) syncStepImage(createdStep.data.id, uploadedImage.data[0]);
+      }
+
+      toast.success("Đã thêm bước mới vào quy trình sản xuất.");
+    } catch (error) {
+      console.error("add new step failed:", error);
+      toast.error("Không thể thêm bước mới vào quy trình sản xuất.");
     }
   };
 
-  const handleUpdateStep = async (values: ManuProcess, step: ManuProcessStep) => {
-    const payload = buildUpdatedStepPayload(values, step);
-    await createManuProcessUpsert(payload).unwrap();
+  const handleUpdateStep = async (step: ManuProcessStep) => {
+    if (!step?.id) {
+      toast.error("Chức năng cập nhật bước hiện chưa khả dụng. Vui lòng thử lại sau.");
+      return;
+    }
+
+    const payload = {
+      id: step.id,
+      title: step.title,
+      content: step.content,
+    };
+
+    await updateManuStep(payload).unwrap();
+
+    if (step?.imageId !== "" && step?.imageId !== null) {
+      handleDeleteStepImg(step.imageId!);
+    }
+
+    if (step?.imagePreview instanceof File) {
+      const uploadedImage = await uploadStepImage(step?.imagePreview, step?.id);
+      if (uploadedImage?.data) syncStepImage(step?.id, uploadedImage?.data[0]);
+    }
 
     toast.success("Đã cập nhật bước trong quy trình sản xuất.");
-
-    if (step.image instanceof File) {
-      Promise.allSettled([
-        handleDeleteStepImg(dataEditing?.images?.[0]?.id ?? ""),
-        uploadStepImage(step.image, dataEditing!.id!),
-      ]);
-    }
   };
 
   const handleSaveStep = async (step: ManuProcessStep) => {
     try {
-      const values = await form.validateFields();
-
       if (!dataEditing?.id) {
-        await handleAddNewStep(values, step);
+        await handleAddNewStep(step);
       } else {
-        await handleUpdateStep(values, step);
+        await handleUpdateStep(step);
       }
+      closeModal();
     } catch (error) {
       console.error("save step failed:", error);
       toast.error("Không thể lưu bước quy trình.");
@@ -124,14 +215,22 @@ export default function ManufacturingProcessPage() {
 
   const handleDeleteStep = async (stepId: string) => {
     try {
-      if (manuProcess) {
-        const payload: ManuProcess = {
-          ...manuProcess,
-          steps: manuProcess?.steps.filter((s) => s.id !== stepId) || [],
-        };
-        await createManuProcessUpsert(payload).unwrap();
-        toast.success("Đã xóa bước khỏi quy trình sản xuất.");
-      }
+      await deleteSiteConfig(stepId).unwrap();
+
+      dispatch(
+        (manuProcessService.util.updateQueryData as any)(
+          "getManuProcess",
+          undefined,
+          (draft: ManuProcess | null) => {
+            if (!draft) return;
+            draft.steps = draft.steps.filter((step: ManuProcessStep) => step.id !== stepId);
+          },
+        ),
+      );
+
+      setOrderedSteps((prev) => prev.filter((step) => step.id !== stepId));
+
+      toast.success("Đã xóa bước khỏi quy trình sản xuất.");
     } catch (error) {
       console.error("delete step failed:", error);
       toast.error("Không thể xóa bước quy trình.");
@@ -139,7 +238,7 @@ export default function ManufacturingProcessPage() {
   };
 
   useLayoutEffect(() => {
-    if (form && manuProcess) {
+    if (form && manuProcess && !isSavingOrderRef.current) {
       applyServerManuData(manuProcess);
     }
   }, [manuProcess, form]);
@@ -156,7 +255,7 @@ export default function ManufacturingProcessPage() {
             </Text>
           </div>
           <div className="flex justify-end">
-            <Button type="submit" variant="primary" size="md" loading={manuProcessLoading}>
+            <Button type="submit" variant="primary" size="md" loading={isUpserting}>
               Lưu thay đổi
             </Button>
           </div>
@@ -167,14 +266,17 @@ export default function ManufacturingProcessPage() {
           name="title"
           rules={[{ required: true, message: "Vui lòng nhập tiêu đề hiển thị." }]}
         >
-          <Input placeholder="VD: Quy trình sản xuất" disabled={manuProcessLoading || isFetching} />
+          <Input
+            placeholder="VD: Quy trình sản xuất"
+            disabled={manuProcessLoading || isUpserting}
+          />
         </Form.Item>
 
         <Form.Item label="Mô tả" name="intro">
           <TextArea
             rows={10}
             placeholder="Mô tả quy trình sản xuất"
-            disabled={manuProcessLoading || isFetching}
+            disabled={manuProcessLoading || isUpserting}
           />
         </Form.Item>
 
@@ -190,10 +292,20 @@ export default function ManufacturingProcessPage() {
                 </Text>
               </div>
               <div className="space-x-2">
+                {isOrderDirty ? (
+                  <Button
+                    variant="outline"
+                    onClick={handleSaveOrder}
+                    loading={isSavingOrder}
+                    disabled={isSavingOrder}
+                  >
+                    Lưu thứ tự
+                  </Button>
+                ) : null}
                 <Button
                   variant="primary"
                   onClick={() => openModal(undefined)}
-                  loading={manuProcessLoading || isCreating}
+                  disabled={isSavingOrder}
                 >
                   Thêm bước
                 </Button>
@@ -213,7 +325,7 @@ export default function ManufacturingProcessPage() {
               onClose={closeModal}
               onSave={handleSaveStep}
               initialValue={dataEditing || undefined}
-              isSaving={manuProcessLoading || isCreating}
+              isSaving={isStepUpdating || isImageUploading}
             />
           </section>
         </Form.Item>

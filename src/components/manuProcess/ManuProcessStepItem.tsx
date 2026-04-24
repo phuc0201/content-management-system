@@ -3,6 +3,7 @@ import { CSS } from "@dnd-kit/utilities";
 import useModal from "antd/es/modal/useModal";
 import { CiEdit, CiTrash } from "react-icons/ci";
 import { toast } from "react-toastify";
+import { config } from "../../config";
 import type { ManuProcessStep } from "../../types/manuProcess.type";
 
 type Props = {
@@ -55,13 +56,18 @@ export default function ManuProcessStepItem({ step, onEdit, onDelete, isOverlay 
         ⠿
       </div>
 
-      {step.imagePreviewUrl ? (
-        <img src={""} alt="step" className="w-16 h-16 object-cover rounded-lg shrink-0" />
-      ) : step.imageId ? (
+      {step.imageId ? (
+        <img
+          loading="lazy"
+          src={config.imageBaseUrl + step?.image?.url}
+          alt="step"
+          className="w-16 h-16 object-cover rounded-lg shrink-0"
+        />
+      ) : (
         <div className="w-16 h-16 rounded-lg border border-dashed border-gray-300 shrink-0 flex items-center justify-center text-[10px] text-gray-500 px-1 text-center">
-          Đã có ảnh
+          Chưa có ảnh
         </div>
-      ) : null}
+      )}
 
       <div className="flex-1 min-w-0">
         <h3 className="text-sm font-semibold text-gray-800 truncate">{step.title}</h3>

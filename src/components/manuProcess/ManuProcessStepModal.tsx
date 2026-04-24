@@ -22,6 +22,7 @@ export default function ManuProcessStepModal({
   onSave,
   initialValue,
   title,
+  isSaving,
 }: ManuProcessStepModalProps) {
   const [form] = Form.useForm();
 
@@ -32,24 +33,28 @@ export default function ManuProcessStepModal({
       id: initialValue?.id,
       title: initialValue?.title ?? "",
       content: initialValue?.content ?? "",
-      image:
-        initialValue?.images && initialValue.images.length > 0
-          ? config.imageBaseUrl + initialValue.images[0].url
-          : null,
+      imageId: initialValue?.imageId ?? "",
+      imagePreview: initialValue?.image ? config.imageBaseUrl + initialValue.image.url : null,
     });
   }, [form, initialValue, open]);
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      onSave(values);
+      onSave({ ...values, imageId: initialValue?.imageId });
     } catch (error) {
       console.error("Validation failed:", error);
     }
   };
 
   return (
-    <ModalShared isOpen={open} onClose={onClose} title={title} onSave={handleSubmit}>
+    <ModalShared
+      isOpen={open}
+      onClose={onClose}
+      isSaving={isSaving}
+      title={title}
+      onSave={handleSubmit}
+    >
       <Form form={form} layout="vertical">
         <Form.Item name="id" label="ID" hidden>
           <Input />
@@ -77,7 +82,7 @@ export default function ManuProcessStepModal({
           <TextArea rows={5} placeholder="Nhập nội dung mô tả..." />
         </Form.Item>
 
-        <Form.Item label="Hình ảnh" name="image">
+        <Form.Item label="Hình ảnh" name="imagePreview">
           <UploadImageBox maxSizeMB={10} />
         </Form.Item>
       </Form>
