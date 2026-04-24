@@ -70,11 +70,14 @@ export default function Products() {
       title: "Giá gốc",
       render: (record: Product) => (
         <div>
-          {record.price.toLocaleString("vi-VN", { style: "currency", currency: "VND" })}{" "}
-          <s className="text-gray-400">
-            {record.salePrice?.toLocaleString("vi-VN", { style: "currency", currency: "VND" }) ||
-              "—"}
-          </s>
+          {record.salePrice?.toLocaleString("vi-VN", { style: "currency", currency: "VND" })}{" "}
+          {!record.salePrice &&
+            record.price?.toLocaleString("vi-VN", { style: "currency", currency: "VND" })}
+          {record.salePrice && (
+            <s className="text-gray-400">
+              {record.price?.toLocaleString("vi-VN", { style: "currency", currency: "VND" }) || "—"}
+            </s>
+          )}
         </div>
       ),
     },
