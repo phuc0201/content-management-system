@@ -1,11 +1,16 @@
 import { Col, ColorPicker, Form, Row, Typography } from "antd";
 import { useForm } from "antd/es/form/Form";
 import { useLayoutEffect, useRef } from "react";
+import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { config } from "../../config";
 import { SiteConfigType } from "../../constants/siteConfig.constant";
-import { useUpsertSiteConfigByTypeMutation } from "../../services/siteConfig.service";
+import {
+  siteConfigService,
+  useUpsertSiteConfigByTypeMutation,
+} from "../../services/siteConfig.service";
 import { useDeleteImageMutation, useUploadImageMutation } from "../../services/upload.service";
+import type { AppDispatch } from "../../store";
 import type { SiteConfigItem } from "../../types/siteConfig.type";
 import UploadImageBox from "../common/UpdloadImageBox";
 import Button from "../ui/button/Button";
@@ -52,12 +57,15 @@ const FIELDS: FieldConfig[] = [
 ];
 
 export default function BrandIdentitySettings(props: BrandIdentitySettingsProps) {
+  const dispatch = useDispatch<AppDispatch>();
   const isDirty = useRef(false);
   const { favicon, mainLogo, subLogo, colorPrimary } = { ...props };
   const [form] = useForm();
   const [upsertSiteConfigByType, { isLoading: isUpserting }] = useUpsertSiteConfigByTypeMutation();
-  const [deleteImage] = useDeleteImageMutation();
-  const [uploadImage] = useUploadImageMutation();
+  const [deleteImage, { isLoading: isDeletingImage }] = useDeleteImageMutation();
+  const [uploadImage, { isLoading: isUploadingImage }] = useUploadImageMutation();
+
+  const isSaving = isUpserting || isDeletingImage || isUploadingImage;
 
   const currentImages = useRef({
     [SiteConfigType.MainLogo]: props?.mainLogo?.images?.[0] ?? null,
@@ -73,57 +81,87 @@ export default function BrandIdentitySettings(props: BrandIdentitySettingsProps)
     };
   }, [props?.mainLogo?.images, props?.subLogo?.images, props?.favicon?.images]);
 
+  const patchConfigImagesCache = (configId: string, images: SiteConfigItem["images"]) => {
+    dispatch(
+      siteConfigService.util.updateQueryData("getList", {}, (draft: any) => {
+        if (!draft?.data) return;
+        const target = draft.data.find((item: SiteConfigItem) => item.id === configId);
+        if (!target) return;
+        target.images = images ?? [];
+      }),
+    );
+  };
+
   const handleSave = async (values: any) => {
     try {
       const colorValue = values?.[SiteConfigType.ColorPrimary];
+      const normalizedNewColor = (
+        typeof colorValue === "string"
+          ? colorValue
+          : (colorValue?.toHexString?.() ?? config.primaryColorDefault)
+      )
+        .trim()
+        .toLowerCase();
+      const normalizedCurrentColor = (colorPrimary?.text ?? config.primaryColorDefault)
+        .trim()
+        .toLowerCase();
 
-      const imageFields = [
-        { key: SiteConfigType.MainLogo, configId: props?.mainLogo?.id },
-        { key: SiteConfigType.SubLogo, configId: props?.subLogo?.id },
-        { key: SiteConfigType.Favicon, configId: props?.favicon?.id },
+      const siteConfigByType = {
+        [SiteConfigType.MainLogo]: props?.mainLogo,
+        [SiteConfigType.SubLogo]: props?.subLogo,
+        [SiteConfigType.Favicon]: props?.favicon,
+      };
+
+      const imageFieldKeys = [
+        SiteConfigType.MainLogo,
+        SiteConfigType.SubLogo,
+        SiteConfigType.Favicon,
       ];
 
-      await Promise.all(
-        imageFields.map(async ({ key, configId }) => {
-          const value = values?.[key];
-          const existingImage = currentImages.current[key];
+      for (const key of imageFieldKeys) {
+        const value = values?.[key];
+        const existingImage = currentImages.current[key];
 
-          if (value == null) {
-            if (existingImage?.id) {
-              await deleteImage({ id: existingImage.id }).unwrap();
-              currentImages.current[key] = null;
-            }
-            return;
-          }
+        const configId = siteConfigByType[key]?.id;
 
-          if (!(value instanceof File)) return;
+        if (!configId) return;
 
+        if (value == null) {
           if (existingImage?.id) {
             await deleteImage({ id: existingImage.id }).unwrap();
+            currentImages.current[key] = null;
+            patchConfigImagesCache(configId, []);
           }
+          continue;
+        }
 
-          if (configId) {
-            const result = await uploadImage({
-              files: [value],
-              type: "site-config",
-              id: configId,
-            }).unwrap();
+        if (!(value instanceof File)) continue;
 
-            const newImage = result?.data?.[0] ?? null;
-            currentImages.current[key] = newImage;
-          }
-        }),
-      );
+        if (existingImage?.id) {
+          await deleteImage({ id: existingImage.id }).unwrap();
+          patchConfigImagesCache(configId, []);
+        }
 
-      await upsertSiteConfigByType({
-        type: SiteConfigType.ColorPrimary,
-        body: {
-          text:
-            typeof colorValue === "string"
-              ? colorValue
-              : (colorValue?.toHexString?.() ?? config.primaryColorDefault),
-        },
-      }).unwrap();
+        const result = await uploadImage({
+          files: [value],
+          type: "site-config",
+          id: configId,
+        }).unwrap();
+
+        const uploadedImages = (result?.data as SiteConfigItem["images"]) ?? [];
+        const newImage = uploadedImages?.[0] ?? null;
+        currentImages.current[key] = newImage;
+        patchConfigImagesCache(configId, uploadedImages);
+      }
+
+      if (normalizedNewColor !== normalizedCurrentColor) {
+        await upsertSiteConfigByType({
+          type: SiteConfigType.ColorPrimary,
+          body: {
+            text: normalizedNewColor,
+          },
+        }).unwrap();
+      }
 
       toast.success("Đã lưu nhận diện thương hiệu.");
     } catch (error) {
@@ -168,7 +206,7 @@ export default function BrandIdentitySettings(props: BrandIdentitySettingsProps)
             Tải lên logo và favicon để hiển thị nhất quán trên toàn bộ hệ thống.
           </Text>
         </div>
-        <Button variant="primary" type="submit" loading={isUpserting}>
+        <Button variant="primary" type="submit" loading={isSaving}>
           Lưu
         </Button>
       </div>

@@ -12,5 +12,5 @@ export const {
   useGetByIdQuery: useGetPolicyByIdQuery,
   useCreateMutation: useCreatePolicyMutation,
   useUpdateMutation: useUpdatePolicyMutation,
-  useRemoveMutation: useRemovePolicyMutation,
+  useRemoveMutation: useDeletePolicyMutation,
 } = policyService;

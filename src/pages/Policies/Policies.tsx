@@ -1,15 +1,17 @@
 import { Space } from "antd";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DeleteButton from "../../components/table/DeleteButton";
 import EditButton from "../../components/table/EditButton";
 import TableShared from "../../components/table/TableShared";
 import { PATH } from "../../constants/path.constant";
-import { useCreatePolicyMutation, useGetPoliciesQuery } from "../../services/policy.service";
+import {
+  useCreatePolicyMutation,
+  useDeletePolicyMutation,
+  useGetPoliciesQuery,
+} from "../../services/policy.service";
 import type { Policy } from "../../types/policy.type";
 
 export default function Policies() {
-  const [searchValue, setSearchValue] = useState("");
   const naviage = useNavigate();
 
   const { data: policieRes } = useGetPoliciesQuery({
@@ -20,6 +22,7 @@ export default function Policies() {
   });
 
   const [createPolicy, { isLoading: isCreating }] = useCreatePolicyMutation();
+  const [deletePolicy] = useDeletePolicyMutation();
 
   const handleCreate = async () => {
     try {
@@ -31,6 +34,14 @@ export default function Policies() {
       naviage(`${PATH.POLICY}/${newPolicy?.data?.id}`);
     } catch (error) {
       console.error("Lỗi khi tạo chính sách:", error);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deletePolicy({ id });
+    } catch (error) {
+      console.error("Lỗi khi xóa chính sách:", error);
     }
   };
 
@@ -52,7 +63,7 @@ export default function Policies() {
               naviage(`${PATH.POLICY}/${record.id}`);
             }}
           />
-          <DeleteButton onClick={async () => {}} />
+          <DeleteButton onClick={async () => handleDelete(record.id)} />
         </Space>
       ),
     },
@@ -69,15 +80,6 @@ export default function Policies() {
           show: true,
           isLoading: isCreating,
           onAdd: handleCreate,
-        }}
-        search={{
-          enableSearch: true,
-          searchKey: "name",
-          placeholder: "Tìm kiếm chính sách",
-          searchValue,
-          onSearch: (value: string) => {
-            setSearchValue(value);
-          },
         }}
       />
     </>

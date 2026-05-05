@@ -1,11 +1,16 @@
 import { Form, Typography } from "antd";
 import { useForm } from "antd/es/form/Form";
 import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { config } from "../../config";
 import { SiteConfigType } from "../../constants/siteConfig.constant";
-import { useUpsertSiteConfigByTypeMutation } from "../../services/siteConfig.service";
+import {
+  siteConfigService,
+  useUpsertSiteConfigByTypeMutation,
+} from "../../services/siteConfig.service";
 import { useDeleteImageMutation, useUploadImageMutation } from "../../services/upload.service";
+import type { AppDispatch } from "../../store";
 import type { SiteConfigItem } from "../../types/siteConfig.type";
 import ComponentCard from "../common/ComponentCard";
 import UploadImageBox from "../common/UpdloadImageBox";
@@ -46,19 +51,32 @@ const PROP_MAP: Record<HeroPageKey, keyof HeroSectionManagerProps> = {
 type ImageState = {
   file?: File;
   preview?: string;
-  uploaded?: any;
   currentImageId?: string;
   isDirty?: boolean;
 };
 
 export default function HeroSectionManager(props: HeroSectionManagerProps) {
+  const dispatch = useDispatch<AppDispatch>();
   const [form] = useForm();
 
-  const [upsertSiteConfig, { isLoading }] = useUpsertSiteConfigByTypeMutation();
-  const [uploadImage] = useUploadImageMutation();
-  const [deleteImage] = useDeleteImageMutation();
+  const [upsertSiteConfig, { isLoading: isUpserting }] = useUpsertSiteConfigByTypeMutation();
+  const [uploadImage, { isLoading: isUploading }] = useUploadImageMutation();
+  const [deleteImage, { isLoading: isDeleting }] = useDeleteImageMutation();
+
+  const isSaving = isUpserting || isUploading || isDeleting;
 
   const [images, setImages] = useState<Record<HeroPageKey, ImageState>>({} as any);
+
+  const patchSectionImagesCache = (configId: string, newImages: SiteConfigItem["images"]) => {
+    dispatch(
+      siteConfigService.util.updateQueryData("getList", {}, (draft: any) => {
+        if (!draft?.data) return;
+        const target = draft.data.find((item: SiteConfigItem) => item.id === configId);
+        if (!target) return;
+        target.images = newImages ?? [];
+      }),
+    );
+  };
 
   /** ===== Helpers ===== */
   const getImageUrl = (item: SiteConfigItem | null) =>
@@ -95,47 +113,86 @@ export default function HeroSectionManager(props: HeroSectionManagerProps) {
   /** ===== Save ===== */
   const handleSave = async (values: Record<string, any>) => {
     try {
-      const tasks = HERO_PAGES.map(async (page) => {
+      for (const page of HERO_PAGES) {
         const key = page.key;
         const propKey = PROP_MAP[key];
-        const existingId = props[propKey]?.id;
-
-        const result = await upsertSiteConfig({
-          type: key,
-          body: { text: values[key] || "" },
-        }).unwrap();
-
-        const id = existingId || result?.id;
+        const currentConfig = props[propKey];
         const imageState = images[key];
+        const oldImageId = imageState?.currentImageId ?? currentConfig?.images?.[0]?.id;
 
-        if (imageState?.file && id != null) {
-          const res = await uploadImage({
-            files: [imageState.file],
-            type: "site-config",
-            id,
+        const nextTitle = String(values[key] ?? "").trim();
+        const currentTitle = String(currentConfig?.title ?? "").trim();
+        const isTitleChanged = nextTitle !== currentTitle;
+
+        const selectedFile = imageState?.file;
+        const isRemovingImage = imageState?.isDirty && !selectedFile && !imageState?.preview;
+        const isUploadingImage = selectedFile instanceof File;
+        const hasImageChange = Boolean(isRemovingImage || isUploadingImage);
+
+        if (!isTitleChanged && !hasImageChange) {
+          continue;
+        }
+
+        let configId = currentConfig?.id;
+
+        if (isTitleChanged || (!configId && hasImageChange)) {
+          const result = await upsertSiteConfig({
+            type: key,
+            body: { title: nextTitle },
           }).unwrap();
+          configId = result?.id;
+        }
 
-          const newImage = res?.data?.[0];
+        if (!configId) continue;
 
-          // Xóa dựa vào currentImageId trong state, không phải props
-          const oldImageId = imageState.currentImageId;
+        if (isRemovingImage) {
           if (oldImageId) {
-            await deleteImage({ id: oldImageId });
+            await deleteImage({ id: oldImageId }).unwrap();
+            patchSectionImagesCache(configId, []);
           }
 
-          // Commit UI + cập nhật currentImageId sang id mới
           setImages((prev) => ({
             ...prev,
             [key]: {
-              preview: config.imageBaseUrl + newImage.url,
-              currentImageId: newImage.id, // ← id mới, lần sau sẽ xóa đúng
+              ...prev[key],
+              file: undefined,
+              preview: undefined,
+              currentImageId: undefined,
+              isDirty: false,
+            },
+          }));
+          continue;
+        }
+
+        if (selectedFile instanceof File) {
+          if (oldImageId) {
+            await deleteImage({ id: oldImageId }).unwrap();
+            patchSectionImagesCache(configId, []);
+          }
+
+          const res = await uploadImage({
+            files: [selectedFile],
+            type: "site-config",
+            id: configId,
+          }).unwrap();
+
+          const uploadedImages = (res?.data as SiteConfigItem["images"]) ?? [];
+          const newImage = uploadedImages?.[0];
+          patchSectionImagesCache(configId, uploadedImages);
+
+          setImages((prev) => ({
+            ...prev,
+            [key]: {
+              ...prev[key],
+              file: undefined,
+              preview: newImage?.url ? config.imageBaseUrl + newImage.url : undefined,
+              currentImageId: newImage?.id,
               isDirty: false,
             },
           }));
         }
-      });
+      }
 
-      await Promise.all(tasks);
       toast.success("Lưu thành công");
     } catch (error) {
       console.error(error);
@@ -158,11 +215,11 @@ export default function HeroSectionManager(props: HeroSectionManagerProps) {
     setImages(initImages);
 
     form.setFieldsValue({
-      [SiteConfigType.SectionHome]: props.home?.text || "",
-      [SiteConfigType.SectionAbout]: props.about?.text || "",
-      [SiteConfigType.SectionManuProcess]: props.manuProcess?.text || "",
+      [SiteConfigType.SectionHome]: props.home?.title || "",
+      [SiteConfigType.SectionAbout]: props.about?.title || "",
+      [SiteConfigType.SectionManuProcess]: props.manuProcess?.title || "",
     });
-  }, []);
+  }, [props.home, props.about, props.manuProcess, form]);
 
   /** ===== Cleanup blob URL ===== */
   useEffect(() => {
@@ -183,7 +240,7 @@ export default function HeroSectionManager(props: HeroSectionManagerProps) {
           <Text type="secondary">Mỗi trang có tiêu đề + ảnh hero</Text>
         </div>
 
-        <Button variant="primary" type="submit" loading={isLoading}>
+        <Button variant="primary" type="submit" loading={isSaving}>
           Lưu
         </Button>
       </div>

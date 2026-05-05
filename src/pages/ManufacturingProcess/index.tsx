@@ -215,7 +215,7 @@ export default function ManufacturingProcessPage() {
 
   const handleDeleteStep = async (stepId: string) => {
     try {
-      await deleteSiteConfig(stepId).unwrap();
+      await deleteSiteConfig({ id: stepId }).unwrap();
 
       dispatch(
         (manuProcessService.util.updateQueryData as any)(

@@ -1,11 +1,20 @@
+import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { Typography } from "antd";
-import { useLayoutEffect, useMemo, useState } from "react";
+import useModal from "antd/es/modal/useModal";
+import { useMemo, useState } from "react";
+import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { PlusIcon } from "../../assets/icons";
 import { config } from "../../config";
 import { SiteConfigType } from "../../constants/siteConfig.constant";
-import { useUpsertSiteConfigByTypeMutation } from "../../services/siteConfig.service";
-import { useUploadImageMutation } from "../../services/upload.service";
+import {
+  siteConfigService,
+  useCreateSiteConfigMutation,
+  useDeleteSiteConfigMutation,
+  useUpdateSiteConfigMutation,
+} from "../../services/siteConfig.service";
+import { useDeleteImageMutation, useUploadImageMutation } from "../../services/upload.service";
+import type { AppDispatch } from "../../store";
 import type { SiteConfigItem } from "../../types/siteConfig.type";
 import UploadImageBox from "../common/UpdloadImageBox";
 import Input from "../form/input/InputField";
@@ -13,13 +22,6 @@ import Button from "../ui/button/Button";
 import { ModalShared } from "../ui/modal";
 
 const { Title, Text } = Typography;
-
-type IconItem = {
-  id: string;
-  name: string;
-  link: string;
-  preview?: string;
-};
 
 type ContactIconProps = {
   contacts: SiteConfigItem[];
@@ -31,32 +33,34 @@ const toPreviewUrl = (item: SiteConfigItem) => {
 };
 
 export default function ContactIcon({ contacts }: ContactIconProps) {
+  const dispatch = useDispatch<AppDispatch>();
+  const [modalDelete, contextHolder] = useModal();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [link, setLink] = useState("");
   const [imageValue, setImageValue] = useState<File | string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const [icons, setIcons] = useState<IconItem[]>([]);
-  const [upsertSiteConfigByType, { isLoading: upserting }] = useUpsertSiteConfigByTypeMutation();
+  const [createSiteConfig, { isLoading: creating }] = useCreateSiteConfigMutation();
+  const [updateSiteConfig, { isLoading: updating }] = useUpdateSiteConfigMutation();
+  const [deleteSiteConfig, { isLoading: deleting }] = useDeleteSiteConfigMutation();
   const [uploadImage, { isLoading: uploading }] = useUploadImageMutation();
+  const [deleteImage, { isLoading: deletingImage }] = useDeleteImageMutation();
 
-  const isSaving = upserting || uploading;
+  const isSaving = creating || updating || deleting || uploading || deletingImage;
 
-  const mappedContacts = useMemo(
-    () =>
-      contacts.map((item) => ({
-        id: item.id,
-        name: item.title ?? "",
-        link: item.link ?? "",
-        preview: toPreviewUrl(item),
-      })),
-    [contacts],
-  );
+  const mappedContacts = useMemo(() => contacts, [contacts]);
 
-  useLayoutEffect(() => {
-    setIcons(mappedContacts);
-  }, [mappedContacts]);
+  function patchContactImagesCache(contactId: string, images: SiteConfigItem["images"]) {
+    dispatch(
+      siteConfigService.util.updateQueryData("getList", {}, (draft: any) => {
+        if (!draft?.data) return;
+        const target = draft.data.find((item: SiteConfigItem) => item.id === contactId);
+        if (!target) return;
+        target.images = images ?? [];
+      }),
+    );
+  }
 
   function resetForm() {
     setName("");
@@ -80,82 +84,77 @@ export default function ContactIcon({ contacts }: ContactIconProps) {
     }
 
     try {
-      let targetId = editingId;
-      let uploadedPreview: string | undefined;
+      const editingContact = editingId ? contacts.find((item) => item.id === editingId) : null;
+      const oldImageId = editingContact?.images?.[0]?.id;
 
-      const upserted = await upsertSiteConfigByType({
-        type: SiteConfigType.Contact,
-        body: {
-          // id: editingId ?? undefined,
+      let targetId = editingId ?? "";
+
+      if (editingId) {
+        await updateSiteConfig({
+          id: editingId,
+          type: SiteConfigType.Contact,
           title: trimmedName,
           link: trimmedLink,
-        },
-      }).unwrap();
+        }).unwrap();
+      } else {
+        const created = await createSiteConfig({
+          type: SiteConfigType.Contact,
+          title: trimmedName,
+          link: trimmedLink,
+        }).unwrap();
+        targetId = created.id;
+      }
 
-      targetId = upserted?.id ?? targetId;
+      if (editingId && imageValue === null && oldImageId) {
+        await deleteImage({ id: oldImageId }).unwrap();
+        patchContactImagesCache(targetId, []);
+      }
 
       if (targetId && imageValue instanceof File) {
+        if (oldImageId) {
+          await deleteImage({ id: oldImageId }).unwrap();
+          patchContactImagesCache(targetId, []);
+        }
+
         const uploaded = await uploadImage({
           files: [imageValue],
           type: "site-config",
           id: targetId,
         }).unwrap();
-        const uploadedUrl = uploaded?.data?.[0]?.url;
-        if (uploadedUrl) {
-          uploadedPreview = config.imageBaseUrl + uploadedUrl;
-        }
-      }
-
-      if (editingId) {
-        setIcons((prev) =>
-          prev.map((it) =>
-            it.id === editingId
-              ? {
-                  ...it,
-                  name: trimmedName,
-                  link: trimmedLink,
-                  preview: uploadedPreview ?? it.preview,
-                }
-              : it,
-          ),
-        );
-        toast.success("Đã cập nhật icon.");
-      } else {
-        setIcons((prev) => [
-          ...prev,
-          {
-            id: targetId || String(Date.now()),
-            name: trimmedName,
-            link: trimmedLink,
-            preview: uploadedPreview,
-          },
-        ]);
-        toast.success("Đã thêm icon.");
+        patchContactImagesCache(targetId, (uploaded?.data as SiteConfigItem["images"]) ?? []);
       }
 
       setOpen(false);
       resetForm();
+      toast.success(editingId ? "Đã cập nhật icon." : "Đã thêm icon.");
     } catch (err) {
-      console.error(err);
-      toast.error("Đã có lỗi xảy ra.");
+      console.error("Lưu icon liên hệ thất bại:", err);
+      toast.error("Không thể lưu icon liên hệ.");
     }
   }
 
-  function startEdit(item: IconItem) {
+  function startEdit(item: SiteConfigItem) {
     setEditingId(item.id);
-    setName(item.name);
-    setLink(item.link);
-    setImageValue(item.preview ?? null);
+    setName(item.title ?? "");
+    setLink(item.link ?? "");
+    setImageValue(toPreviewUrl(item) ?? null);
     setOpen(true);
   }
 
-  // Tính năng này chưa có API nên tạm thời bỏ qua
-  function handleDelete(item: IconItem) {
-    if (!confirm(`Xóa icon "${item.name}" ?`)) return;
-    // TODO: gọi API DELETE ở đây trước khi cập nhật state
-    setIcons((prev) => prev.filter((it) => it.id !== item.id));
-    if (item.preview) URL.revokeObjectURL(item.preview);
-    toast.info("Đã xóa icon.");
+  async function handleDelete(item: SiteConfigItem) {
+    try {
+      const imageId = item.images?.[0]?.id;
+
+      await Promise.all([
+        deleteSiteConfig({ id: item.id }).unwrap(),
+        imageId ? deleteImage({ id: imageId }).unwrap() : Promise.resolve(),
+      ]);
+
+      toast.success("Đã xóa icon.");
+    } catch (error) {
+      console.error("Xóa icon liên hệ thất bại:", error);
+      toast.error("Không thể xóa icon liên hệ.");
+    }
   }
 
   return (
@@ -186,11 +185,11 @@ export default function ContactIcon({ contacts }: ContactIconProps) {
       </div>
 
       <div className="w-full border-2 border-dashed rounded-lg min-h-56 p-4 dark:border-gray-700 flex items-center justify-center">
-        {icons.length === 0 ? (
+        {mappedContacts.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <img
-                src="/public/images/empty-state-mail.png"
+                src="/images/empty-state-mail.png"
                 alt="empty"
                 className="mx-auto mb-3 h-12 w-12"
                 onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
@@ -200,23 +199,27 @@ export default function ContactIcon({ contacts }: ContactIconProps) {
           </div>
         ) : (
           <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-4">
-            {icons.map((it) => (
+            {mappedContacts.map((it) => (
               <div
                 key={it.id}
                 className="bg-white dark:bg-gray-800 rounded-md p-3 flex flex-col items-center justify-between shadow-sm"
               >
                 <div className="flex-1 flex flex-col items-center gap-2">
-                  {it.preview ? (
-                    <img src={it.preview} alt={it.name} className="h-12 w-12 object-contain" />
+                  {toPreviewUrl(it) ? (
+                    <img
+                      src={toPreviewUrl(it)}
+                      alt={it.title ?? "Contact icon"}
+                      className="h-12 w-12 object-contain"
+                    />
                   ) : (
                     <div className="h-12 w-12 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center text-gray-400">
                       Icon
                     </div>
                   )}
                   <div className="text-sm font-medium mt-2 text-gray-800 dark:text-gray-100">
-                    {it.name}
+                    {it.title}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-full">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-37.5">
                     {it.link}
                   </div>
                 </div>
@@ -233,7 +236,17 @@ export default function ContactIcon({ contacts }: ContactIconProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDelete(it)}
+                    onClick={() =>
+                      modalDelete.confirm({
+                        title: "Xác nhận xóa",
+                        centered: true,
+                        icon: <ExclamationCircleOutlined />,
+                        content: "Bạn có chắc chắn muốn xóa ?",
+                        okText: "Xóa",
+                        cancelText: "Hủy",
+                        onOk: () => handleDelete(it),
+                      })
+                    }
                     className="flex-1"
                   >
                     Xóa
@@ -295,6 +308,7 @@ export default function ContactIcon({ contacts }: ContactIconProps) {
           </div>
         </div>
       </ModalShared>
+      {contextHolder}
     </div>
   );
 }

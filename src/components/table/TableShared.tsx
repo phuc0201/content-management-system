@@ -145,15 +145,17 @@ function TableShared<TRow>({
             <Table className="text-sm">
               <TableHeader className="bg-gray-100 dark:bg-white/5 h-14 text-[16px]">
                 <TableRow>
-                  {columns.map((column) => (
-                    <TableCell
-                      key={String(column.key)}
-                      isHeader
-                      className={`px-4 py-3 font-medium text-gray-700 dark:text-gray-300 ${getAlignClass(column.align)} ${column.headerClassName ?? ""}`}
-                    >
-                      {column.title}
-                    </TableCell>
-                  ))}
+                  {columns.map((column) => {
+                    return (
+                      <TableCell
+                        key={String(column.key)}
+                        isHeader
+                        className={`px-4 py-3 font-medium text-gray-700 dark:text-gray-300 ${getAlignClass(column.align)} ${column.headerClassName ?? ""}`}
+                      >
+                        {column.title}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               </TableHeader>
 

@@ -1,5 +1,6 @@
-import { Image, message, Space } from "antd";
+import { Image, message, Space, Tooltip } from "antd";
 import { useEffect, useState } from "react";
+import { MdOutlinePushPin } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import CategorySelect from "../../components/product/CategorySelect";
@@ -38,7 +39,8 @@ export default function Products() {
     isFetching: fetchingProducts,
   } = useGetProductsQuery({
     pagination: paginationState,
-  });
+    ...(selectedCategory ? { filters: { categoryId: selectedCategory } } : {}),
+  } as any);
 
   const { data: categoryResults } = useGetCategoriesQuery({});
 
@@ -51,6 +53,32 @@ export default function Products() {
   }, [fetchingProducts, suppressNextRefetch]);
 
   const columns = [
+    {
+      key: "pin",
+      title: "",
+      cellClassName: "w-10",
+      align: "center" as const,
+      render: (record: Product) => (
+        <Tooltip title={record.pin ? "Xóa khỏi danh sách sản phẩm nổi bật" : "Thêm vào danh sách sản phẩm nổi bật"}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleTogglePin(record);
+            }}
+            className={`p-2 rounded transition-all ${
+              record.pin
+                ? "text-red-500 hover:text-red-600"
+                : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            }`}
+          >
+            <MdOutlinePushPin
+              size={20}
+              className={`transition-transform duration-300 ${record.pin ? "rotate-45" : ""}`}
+            />
+          </button>
+        </Tooltip>
+      ),
+    },
     {
       key: "Image",
       title: "Ảnh",
@@ -145,6 +173,20 @@ export default function Products() {
     }
   };
 
+  const handleTogglePin = async (product: Product) => {
+    try {
+      await updateProduct({
+        id: product.id,
+        body: { pin: !product.pin },
+      }).unwrap();
+      message.success(product.pin ? "Bỏ ghim sản phẩm" : "Đã ghim sản phẩm thành công");
+      setSuppressNextRefetch(true);
+    } catch (error) {
+      console.error("toggle pin failed:", error);
+      message.error("Không thể cập nhật trạng thái ghim.");
+    }
+  };
+
   return (
     <div className="select-none">
       <TableShared<Product>
@@ -192,7 +234,6 @@ export default function Products() {
               value={selectedCategory}
               onChange={(value) => {
                 setSelectedCategory(value);
-                console.log(value);
               }}
               className="min-w-40! w-full sm:w-auto"
             />

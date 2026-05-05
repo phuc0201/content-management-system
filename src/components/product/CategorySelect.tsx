@@ -35,6 +35,7 @@ export default function CategorySelect({
           value={value}
           onChange={(val: string) => onChange?.(val)}
           className={className}
+          allowClear={true}
         />
       </div>
 
@@ -52,7 +53,7 @@ export default function CategorySelect({
                 onClick={() => handleSelect(opt.value)}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-700">{opt.label}</span>
+                  <span className="text-sm text-gray-700 whitespace-nowrap">{opt.label}</span>
                 </div>
 
                 <Checkbox

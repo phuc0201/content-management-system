@@ -17,6 +17,7 @@ export interface Product extends Record<string, unknown> {
   isDraft?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  pin: boolean;
 }
 
 export interface ProductImage {
@@ -44,6 +45,7 @@ export interface CreateProductDTO {
   thumbnailUrl?: string | null;
   isDraft?: boolean;
   img?: string[];
+  pin?: boolean;
 }
 
 export type UpdateProductDTO = Partial<CreateProductDTO>;

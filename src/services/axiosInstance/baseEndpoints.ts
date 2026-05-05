@@ -48,12 +48,12 @@ export function buildBaseEndpoints<
       invalidatesTags: (_result, _error, { id }) => [{ type: tag, id: id }],
     }),
 
-    remove: builder.mutation<ApiResponse<void>, string | number>({
-      query: (id) => ({
+    remove: builder.mutation<ApiResponse<void>, any>({
+      query: ({ id }) => ({
         url: `${resource}/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: (_result, _error, id) => [{ type: tag, id }],
+      invalidatesTags: (_result, _error, { id }) => [{ type: tag, id }],
     }),
   };
 }

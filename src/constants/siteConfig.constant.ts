@@ -24,4 +24,6 @@ export const SiteConfigType = {
   AboutCoreValue: "about_core_value", //index + text
   ManuProcess: "manu_process_title", // title + content
   ManuProcessStep: "manu_process_step", //index + title + content
+  WhyNot: "why_not", //index + title + content
+  HomeBanner: "banner_home", // image
 };

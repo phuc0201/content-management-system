@@ -42,7 +42,6 @@ export default function CategoriesPage() {
   const [updateCategory, { isLoading: updating }] = useUpdateCategoryMutation();
   const [deleteCategory] = useRemoveCategoryMutation();
 
-  const [searchValue, setSearchValue] = useState("");
   const [isModalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<CategoryFormState>(EMPTY_FORM);
 
@@ -135,13 +134,6 @@ export default function CategoriesPage() {
           show: true,
           text: "Thêm danh mục",
           onAdd: openCreateModal,
-        }}
-        search={{
-          enableSearch: true,
-          searchKey: "name",
-          placeholder: "Tìm kiếm danh mục",
-          searchValue,
-          onSearch: (value) => setSearchValue(value),
         }}
         pagination={{
           current: currentPage,

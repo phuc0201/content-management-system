@@ -4,6 +4,7 @@ import AnnouncementManager from "../../components/siteconfig/AnnouncementManager
 import BrandIdentitySettings from "../../components/siteconfig/BrandIdentitySettings";
 import ContactIcon from "../../components/siteconfig/ContactIcon";
 import HeroSectionManager from "../../components/siteconfig/HeroSectionManager";
+import HomeBanner from "../../components/siteconfig/HomeBanner";
 import WhyNotContent from "../../components/siteconfig/WhyNotContent";
 import { SiteConfigType } from "../../constants/siteConfig.constant";
 import { useGetSiteConfigsQuery } from "../../services/siteConfig.service";
@@ -49,6 +50,14 @@ export default function SiteConfig() {
     };
   }, [siteConfigResult]);
 
+  const topbar = useMemo(() => {
+    return siteConfigResult?.data?.filter((config) => config.type === "top_bar") || [];
+  }, [siteConfigResult]);
+
+  const whyNotReasons = useMemo(() => {
+    return siteConfigResult?.data?.filter((config) => config.type === SiteConfigType.WhyNot) || [];
+  }, [siteConfigResult]);
+
   const contactIcons = useMemo(() => {
     return siteConfigResult?.data?.filter((config) => config.type === SiteConfigType.Contact) || [];
   }, [siteConfigResult]);
@@ -65,14 +74,26 @@ export default function SiteConfig() {
       render: () => <HeroSectionManager {...heroSection} />,
     },
     {
+      key: "homeBanner",
+      label: "Banner trang chủ",
+      render: () => (
+        <HomeBanner
+          homeBanner={
+            siteConfigResult?.data?.find((config) => config.type === SiteConfigType.HomeBanner) ||
+            null
+          }
+        />
+      ),
+    },
+    {
       key: "announce",
       label: "Thông báo",
-      render: () => <AnnouncementManager />,
+      render: () => <AnnouncementManager topbar={topbar} />,
     },
     {
       key: "whyUs",
       label: "Lý do chọn doanh nghiệp",
-      render: () => <WhyNotContent />,
+      render: () => <WhyNotContent reasons={whyNotReasons} />,
     },
     {
       key: "contact",
