@@ -18,6 +18,7 @@ export interface Product extends Record<string, unknown> {
   createdAt?: string;
   updatedAt?: string;
   pin: boolean;
+  q?: string;
 }
 
 export interface ProductImage {

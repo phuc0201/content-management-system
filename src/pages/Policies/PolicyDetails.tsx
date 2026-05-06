@@ -1,4 +1,4 @@
-import { Form, Typography } from "antd";
+import { Form, Spin, Typography } from "antd";
 import { useForm } from "antd/es/form/Form";
 import { lazy, Suspense, useLayoutEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -48,6 +48,12 @@ export default function PolicyDetails() {
 
   return (
     <Form form={form} layout="vertical" onFinish={handleSave}>
+      {isLoading && (
+        <div className="fixed inset-0 z-1000 w-screen h-screen flex items-center justify-center bg-white/20 dark:bg-black/40 backdrop-blur-xs pointer-events-auto">
+          <Spin size="small" description="Đang tải thông tin..." />
+        </div>
+      )}
+
       <div className="flex items-center justify-between pb-4!">
         <div>
           <Title level={4} className="mb-1!">
@@ -57,13 +63,28 @@ export default function PolicyDetails() {
             Cập nhật thông tin, mô tả và ảnh chính sách.
           </Text>
         </div>
-        <div className="flex gap-2">
+        <div className="md:flex hidden gap-2">
           <Button variant="outline" onClick={() => navigate(PATH.POLICY)}>
             Quay lại
           </Button>
           <Button type="submit" variant="primary" loading={isUpdating || isLoading}>
             Lưu chính sách
           </Button>
+        </div>
+
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 p-4 backdrop-blur md:hidden dark:border-gray-700 dark:bg-gray-900/95 mb-0!">
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate(PATH.BLOG)}
+              className="h-11 w-full rounded-xl font-semibold"
+            >
+              Quay lại
+            </Button>
+            <Button type="submit" variant="primary" loading={isUpdating || isLoading}>
+              Lưu chính sách
+            </Button>
+          </div>
         </div>
       </div>
 

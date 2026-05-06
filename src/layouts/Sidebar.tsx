@@ -9,6 +9,7 @@ import { SlDocs } from "react-icons/sl";
 import { Link, NavLink } from "react-router";
 import LogoDefault from "../assets/logo_default.png";
 import { PATH } from "../constants/path.constant";
+import { useAuth } from "../providers/AuthProvider";
 import { useSidebar } from "../providers/SidebarProvider";
 
 const MENU_ITEMS = [
@@ -55,10 +56,13 @@ const MENU_ITEMS = [
 ];
 
 const Sidebar: React.FC = () => {
+  const { logout } = useAuth();
   const { isExpanded, isMobileOpen, isHovered, closeSidebar } = useSidebar();
+  const isSidebarOpen = isExpanded || isHovered || isMobileOpen;
   const sidebarRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
+      if (e.target instanceof Element && e.target.closest("[data-sidebar-toggle]")) return;
       if (isMobileOpen && sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
         closeSidebar();
       }
@@ -71,7 +75,7 @@ const Sidebar: React.FC = () => {
   return (
     <aside
       ref={sidebarRef}
-      className={`fixed select-none mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200
+      className={`fixed select-none flex flex-col top-18.5 lg:top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out md:z-1000 z-100000 border-r border-gray-200
         ${isExpanded || isMobileOpen ? "w-72.5" : isHovered ? "w-72.5" : "w-22.5"}
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}
@@ -115,9 +119,15 @@ const Sidebar: React.FC = () => {
                 }
               >
                 <span className="menu-item-icon-size">{item.icon}</span>
-                {(isExpanded || isHovered || isMobileOpen) && (
-                  <span className="menu-item-text">{item.label}</span>
-                )}
+                <span
+                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ${
+                    isSidebarOpen
+                      ? "max-w-60 opacity-100 translate-x-0"
+                      : "max-w-0 opacity-0 -translate-x-2"
+                  }`}
+                >
+                  {item.label}
+                </span>
               </NavLink>
             </li>
           ))}
@@ -126,15 +136,21 @@ const Sidebar: React.FC = () => {
             <button
               className="menu-item-inactive menu-item group w-full"
               onClick={() => {
-                // logout logic
+                logout();
               }}
             >
               <span className="menu-item-icon-size">
                 <IoIosLogOut />
               </span>
-              {(isExpanded || isHovered || isMobileOpen) && (
-                <span className="menu-item-text">Đăng xuất</span>
-              )}
+              <span
+                className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ${
+                  isSidebarOpen
+                    ? "max-w-60 opacity-100 translate-x-0"
+                    : "max-w-0 opacity-0 -translate-x-2"
+                }`}
+              >
+                Đăng xuất
+              </span>
             </button>
           </li>
         </ul>

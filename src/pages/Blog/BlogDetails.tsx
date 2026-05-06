@@ -1,4 +1,4 @@
-import { Form, Typography } from "antd";
+import { Form, Spin, Typography } from "antd";
 import { useForm } from "antd/es/form/Form";
 import "ckeditor5/ckeditor5-content.css";
 import { lazy, Suspense, useLayoutEffect, useMemo, useRef } from "react";
@@ -111,7 +111,18 @@ export default function BlogDetails() {
   }, [blogResult, form]);
 
   return (
-    <Form form={form} onFinish={handleSave} layout="vertical" className="select-none">
+    <Form
+      form={form}
+      onFinish={handleSave}
+      layout="vertical"
+      className="select-none pb-24! md:pb-0"
+    >
+      {isBlogLoading && (
+        <div className="fixed inset-0 z-1000 w-screen h-screen flex items-center justify-center bg-white/20 dark:bg-black/40 backdrop-blur-xs pointer-events-auto">
+          <Spin size="small" description="Đang tải thông tin..." />
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <div>
           <Title level={4} className="mb-1!">
@@ -122,7 +133,7 @@ export default function BlogDetails() {
           </Text>
         </div>
 
-        <div className="flex justify-end gap-2">
+        <div className="sm:flex hidden justify-end gap-2">
           <Button variant="outline" onClick={() => navigate(PATH.BLOG)}>
             Quay lại
           </Button>
@@ -131,6 +142,26 @@ export default function BlogDetails() {
             isDraft={!!blogResult?.data?.isDraft}
             loading={updating || isBlogLoading}
           />
+        </div>
+
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 p-4 backdrop-blur md:hidden dark:border-gray-700 dark:bg-gray-900/95 mb-0!">
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate(PATH.BLOG)}
+              className="h-11 w-full rounded-xl font-semibold"
+            >
+              Quay lại
+            </Button>
+            <SplitButton
+              loading={isBlogLoading || updating}
+              onSave={handleSave}
+              isDraft={blogResult?.data?.isDraft}
+              fullWidth
+              menuPlacement="top"
+              className="h-11 rounded-xl"
+            />
+          </div>
         </div>
       </div>
 

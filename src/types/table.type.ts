@@ -63,4 +63,14 @@ export interface TableProps<TRow> {
   className?: string;
 
   topRightComponent?: ReactNode;
+
+  cardConfig?: CardConfig;
 }
+
+export type CardConfig = {
+  pinKey?: string; // key của cột pin/ghim
+  imageKey?: string; // key của cột ảnh
+  nameKey?: string; // key của cột tên chính
+  statusKey?: string; // key của cột trạng thái/badge
+  actionsKey?: string; // key của cột thao tác (mặc định "actions")
+};

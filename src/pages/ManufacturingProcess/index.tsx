@@ -1,4 +1,4 @@
-import { Form, Typography } from "antd";
+import { Form, Spin, Typography } from "antd";
 import { useForm } from "antd/es/form/Form";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
@@ -244,92 +244,106 @@ export default function ManufacturingProcessPage() {
   }, [manuProcess, form]);
 
   return (
-    <ComponentCard>
-      <Form form={form} layout="vertical" onFinish={handleSave}>
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <Title level={4}>Quản lý quy trình sản xuất</Title>
-            <Text type="secondary" className="text-sm">
-              Cập nhật quy trình sản xuất để khách hàng hiểu rõ hơn về cách chúng tôi tạo ra sản
-              phẩm.
-            </Text>
-          </div>
-          <div className="flex justify-end">
-            <Button type="submit" variant="primary" size="md" loading={isUpserting}>
-              Lưu thay đổi
-            </Button>
-          </div>
+    <div className="relative md:pb-0 pb-24">
+      {manuProcessLoading && (
+        <div className="fixed inset-0 z-1000 w-screen h-screen flex items-center justify-center bg-white/20 dark:bg-black/40 backdrop-blur-xs pointer-events-auto">
+          <Spin size="small" description="Đang tải thông tin..." />
         </div>
-
-        <Form.Item
-          label="Tiêu đề hiển thị"
-          name="title"
-          rules={[{ required: true, message: "Vui lòng nhập tiêu đề hiển thị." }]}
-        >
-          <Input
-            placeholder="VD: Quy trình sản xuất"
-            disabled={manuProcessLoading || isUpserting}
-          />
-        </Form.Item>
-
-        <Form.Item label="Mô tả" name="intro">
-          <TextArea
-            rows={10}
-            placeholder="Mô tả quy trình sản xuất"
-            disabled={manuProcessLoading || isUpserting}
-          />
-        </Form.Item>
-
-        <Form.Item name="steps">
-          <section className="space-y-3">
-            <div className="flex items-start justify-between pb-1!">
-              <div>
-                <Title level={4} className="mb-1!">
-                  Các bước trong quy trình sản xuất
-                </Title>
-                <Text type="secondary" className="text-sm">
-                  Kéo thả để sắp xếp lại thứ tự các bước.
-                </Text>
-              </div>
-              <div className="space-x-2">
-                {isOrderDirty ? (
-                  <Button
-                    variant="outline"
-                    onClick={handleSaveOrder}
-                    loading={isSavingOrder}
-                    disabled={isSavingOrder}
-                  >
-                    Lưu thứ tự
-                  </Button>
-                ) : null}
-                <Button
-                  variant="primary"
-                  onClick={() => openModal(undefined)}
-                  disabled={isSavingOrder}
-                >
-                  Thêm bước
-                </Button>
-              </div>
+      )}
+      <ComponentCard>
+        <Form form={form} layout="vertical" onFinish={handleSave}>
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <Title level={4}>Quản lý quy trình sản xuất</Title>
+              <Text type="secondary" className="text-sm">
+                Cập nhật quy trình sản xuất để khách hàng hiểu rõ hơn về cách chúng tôi tạo ra sản
+                phẩm.
+              </Text>
             </div>
+            <div className="flex justify-end md:relative absolute inset-x-0 bottom-0">
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                loading={isUpserting}
+                className="whitespace-nowrap"
+              >
+                Lưu thay đổi
+              </Button>
+            </div>
+          </div>
 
-            <ManuProcessStepList
-              steps={orderedSteps}
-              onEdit={(record) => openModal(record)}
-              onReorder={setOrderedSteps}
-              onDelete={handleDeleteStep}
+          <Form.Item
+            label="Tiêu đề hiển thị"
+            name="title"
+            rules={[{ required: true, message: "Vui lòng nhập tiêu đề hiển thị." }]}
+          >
+            <Input
+              placeholder="VD: Quy trình sản xuất"
+              disabled={manuProcessLoading || isUpserting}
             />
+          </Form.Item>
 
-            <ManuProcessStepModal
-              title=""
-              open={open}
-              onClose={closeModal}
-              onSave={handleSaveStep}
-              initialValue={dataEditing || undefined}
-              isSaving={isStepUpdating || isImageUploading}
+          <Form.Item label="Mô tả" name="intro">
+            <TextArea
+              rows={10}
+              placeholder="Mô tả quy trình sản xuất"
+              disabled={manuProcessLoading || isUpserting}
             />
-          </section>
-        </Form.Item>
-      </Form>
-    </ComponentCard>
+          </Form.Item>
+
+          <Form.Item name="steps">
+            <section className="space-y-3">
+              <div className="flex items-start justify-between pb-1!">
+                <div>
+                  <Title level={4} className="mb-1!">
+                    Các bước trong quy trình sản xuất
+                  </Title>
+                  <Text type="secondary" className="text-sm">
+                    Kéo thả để sắp xếp lại thứ tự các bước.
+                  </Text>
+                </div>
+                <div className="space-x-2">
+                  {isOrderDirty ? (
+                    <Button
+                      variant="outline"
+                      onClick={handleSaveOrder}
+                      loading={isSavingOrder}
+                      disabled={isSavingOrder}
+                    >
+                      Lưu thứ tự
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="primary"
+                    onClick={() => openModal(undefined)}
+                    disabled={isSavingOrder}
+                    className="whitespace-nowrap"
+                  >
+                    Thêm bước
+                  </Button>
+                </div>
+              </div>
+
+              <ManuProcessStepList
+                steps={orderedSteps}
+                onEdit={(record) => openModal(record)}
+                onReorder={setOrderedSteps}
+                onDelete={handleDeleteStep}
+              />
+
+              <ManuProcessStepModal
+                title=""
+                open={open}
+                onClose={closeModal}
+                onSave={handleSaveStep}
+                initialValue={dataEditing || undefined}
+                isSaving={isStepUpdating || isImageUploading}
+              />
+            </section>
+          </Form.Item>
+        </Form>
+      </ComponentCard>
+    </div>
   );
 }

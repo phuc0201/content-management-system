@@ -14,12 +14,14 @@ import type { Policy } from "../../types/policy.type";
 export default function Policies() {
   const naviage = useNavigate();
 
-  const { data: policieRes } = useGetPoliciesQuery({
+  const { data: policieRes, isFetching } = useGetPoliciesQuery({
     pagination: {
       current: 1,
       pageSize: 10,
     },
   });
+
+  const isInitialLoading = isFetching && (policieRes?.data?.length ?? 0) === 0;
 
   const [createPolicy, { isLoading: isCreating }] = useCreatePolicyMutation();
   const [deletePolicy] = useDeletePolicyMutation();
@@ -73,6 +75,8 @@ export default function Policies() {
     <>
       <TableShared<Policy>
         dataSource={policieRes?.data || []}
+        fetching={isFetching}
+        loading={isInitialLoading}
         rowKey={"id"}
         columns={columns}
         buttonAdd={{

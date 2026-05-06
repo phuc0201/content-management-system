@@ -1,4 +1,4 @@
-import { Form, Typography } from "antd";
+import { Form, Spin, Typography } from "antd";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import Input from "../../components/form/input/InputField";
@@ -23,6 +23,8 @@ const normalizeOptionalString = (value: unknown) => {
   return normalized ? normalized : undefined;
 };
 
+const normalizeComparableString = (value: unknown) => String(value ?? "").trim();
+
 export default function Contact() {
   const [form] = Form.useForm();
   const { data: siteConfigResponse, isFetching: isFetchingSiteConfig } = useGetSiteConfigsQuery({});
@@ -34,6 +36,7 @@ export default function Contact() {
   const [mapMode, setMapMode] = useState<"desktop" | "touch">("desktop");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement | null>(null);
+  const initialSiteConfigValuesRef = useRef<Record<string, string>>({});
   const hasGoongApiKey = Boolean(import.meta.env.VITE_GOONG_API_KEY);
   const shouldSearch = hasGoongApiKey && debouncedAddressQuery.trim().length >= 3;
 
@@ -58,6 +61,24 @@ export default function Contact() {
     const companyAddress = configByType[SiteConfigType.CompanyAddress]?.text ?? "";
     const companyLat = configByType[SiteConfigType.CompanyLat]?.text ?? "";
     const companyLng = configByType[SiteConfigType.CompanyLng]?.text ?? "";
+
+    initialSiteConfigValuesRef.current = {
+      [SiteConfigType.CompanyName]: normalizeComparableString(
+        configByType[SiteConfigType.CompanyName]?.text,
+      ),
+      [SiteConfigType.CompanyAddress]: normalizeComparableString(companyAddress),
+      [SiteConfigType.CompanyTaxCode]: normalizeComparableString(
+        configByType[SiteConfigType.CompanyTaxCode]?.text,
+      ),
+      [SiteConfigType.CompanyPhoneNumber]: normalizeComparableString(
+        configByType[SiteConfigType.CompanyPhoneNumber]?.text,
+      ),
+      [SiteConfigType.CompanyEmail]: normalizeComparableString(
+        configByType[SiteConfigType.CompanyEmail]?.text,
+      ),
+      [SiteConfigType.CompanyLat]: normalizeComparableString(companyLat),
+      [SiteConfigType.CompanyLng]: normalizeComparableString(companyLng),
+    };
 
     form.setFieldsValue({
       [SiteConfigType.CompanyName]: configByType[SiteConfigType.CompanyName]?.text ?? "",
@@ -137,49 +158,35 @@ export default function Contact() {
 
   const onSubmit = async (values: Record<string, unknown>) => {
     const upsertItems: Array<{ type: string; body: UpsertSiteConfigBody }> = [
-      {
-        type: SiteConfigType.CompanyName,
-        body: {
-          text: normalizeOptionalString(values[SiteConfigType.CompanyName]),
-        },
-      },
-      {
-        type: SiteConfigType.CompanyAddress,
-        body: {
-          text: normalizeOptionalString(values[SiteConfigType.CompanyAddress]),
-        },
-      },
-      {
-        type: SiteConfigType.CompanyTaxCode,
-        body: {
-          text: normalizeOptionalString(values[SiteConfigType.CompanyTaxCode]),
-        },
-      },
-      {
-        type: SiteConfigType.CompanyPhoneNumber,
-        body: {
-          text: normalizeOptionalString(values[SiteConfigType.CompanyPhoneNumber]),
-        },
-      },
-      {
-        type: SiteConfigType.CompanyEmail,
-        body: {
-          text: normalizeOptionalString(values[SiteConfigType.CompanyEmail]),
-        },
-      },
-      {
-        type: SiteConfigType.CompanyLat,
-        body: {
-          text: normalizeOptionalString(values[SiteConfigType.CompanyLat]),
-        },
-      },
-      {
-        type: SiteConfigType.CompanyLng,
-        body: {
-          text: normalizeOptionalString(values[SiteConfigType.CompanyLng]),
-        },
-      },
-    ];
+      SiteConfigType.CompanyName,
+      SiteConfigType.CompanyAddress,
+      SiteConfigType.CompanyTaxCode,
+      SiteConfigType.CompanyPhoneNumber,
+      SiteConfigType.CompanyEmail,
+      SiteConfigType.CompanyLat,
+      SiteConfigType.CompanyLng,
+    ]
+      .map((type): { type: string; body: UpsertSiteConfigBody } | null => {
+        const nextValue = normalizeComparableString(values[type]);
+        const previousValue = initialSiteConfigValuesRef.current[type] ?? "";
+
+        if (nextValue === previousValue) {
+          return null;
+        }
+
+        return {
+          type,
+          body: {
+            text: normalizeOptionalString(values[type]),
+          },
+        };
+      })
+      .filter((item): item is { type: string; body: UpsertSiteConfigBody } => item !== null);
+
+    if (upsertItems.length === 0) {
+      toast.info("Không có thay đổi nào để lưu.");
+      return;
+    }
 
     try {
       const results = await Promise.allSettled(
@@ -203,6 +210,12 @@ export default function Contact() {
         return;
       }
 
+      upsertItems.forEach((item) => {
+        initialSiteConfigValuesRef.current[item.type] = normalizeComparableString(
+          values[item.type],
+        );
+      });
+
       toast.success("Lưu thông tin liên hệ thành công.");
     } catch (error) {
       console.error("submit site config failed:", error);
@@ -211,28 +224,33 @@ export default function Contact() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {isFetchingSiteConfig && (
+        <div className="fixed inset-0 z-1000 w-screen h-screen flex items-center justify-center bg-white/20 dark:bg-black/40 backdrop-blur-xs pointer-events-auto">
+          <Spin size="small" description="Đang tải thông tin..." />
+        </div>
+      )}
+
       <Form form={form} layout="vertical" onFinish={onSubmit}>
-        <Form.Item>
-          <div className="flex items-start justify-between">
-            <div>
-              <Title level={4} className="mb-1!">
-                Thông tin liên hệ
-              </Title>
-              <Text type="secondary" className="text-sm">
-                Cập nhật thông tin liên hệ của công ty, bao gồm địa chỉ, số điện thoại, email và mã
-                số thuế.
-              </Text>
-            </div>
-            <Button
-              type="submit"
-              disabled={isFetchingSiteConfig}
-              loading={isUpsertingSiteConfig || isFetchingSiteConfig}
-            >
-              Lưu thông tin
-            </Button>
+        <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <Title level={4}>Thông tin liên hệ</Title>
+            <Text type="secondary" className="text-sm">
+              Cập nhật thông tin liên hệ của công ty, bao gồm địa chỉ, số điện thoại, email và mã số
+              thuế.
+            </Text>
           </div>
-        </Form.Item>
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            disabled={isFetchingSiteConfig}
+            loading={isUpsertingSiteConfig || isFetchingSiteConfig}
+            className="w-full md:w-auto shrink-0 md:block! hidden!"
+          >
+            Lưu thay đổi
+          </Button>
+        </div>
 
         <Form.Item
           label="Tên công ty"
@@ -281,81 +299,98 @@ export default function Contact() {
         <Form.Item name={SiteConfigType.CompanyLng} hidden>
           <Input />
         </Form.Item>
-      </Form>
 
-      <div className="space-y-6 pt-5">
-        <div>
-          <Title level={4} className="mb-1!">
-            Ghim bản đồ
-          </Title>
-          <Text type="secondary" className="text-sm">
-            {mapMode === "touch"
-              ? "Pin được cố định ở giữa bản đồ. Hãy kéo bản đồ để ghim lại vị trí trên mobile/tablet."
-              : "Trên desktop, nhấn vào vị trí trên bản đồ để cập nhật tọa độ công ty."}
-          </Text>
-        </div>
+        <div className="space-y-6 pt-5">
+          <div>
+            <Title level={4} className="mb-1!">
+              Ghim bản đồ
+            </Title>
+            <Text type="secondary" className="text-sm">
+              {mapMode === "touch"
+                ? "Pin được cố định ở giữa bản đồ. Hãy kéo bản đồ để ghim lại vị trí trên mobile/tablet."
+                : "Trên desktop, nhấn vào vị trí trên bản đồ để cập nhật tọa độ công ty."}
+            </Text>
+          </div>
 
-        <div className="relative" ref={suggestionsRef}>
-          <Input
-            placeholder="Tìm kiếm địa chỉ..."
-            value={addressQuery}
-            onChange={(event) => {
-              setAddressQuery(event.target.value);
-              setShowSuggestions(true);
-            }}
-          />
+          <div className="relative" ref={suggestionsRef}>
+            <Input
+              placeholder="Tìm kiếm địa chỉ..."
+              value={addressQuery}
+              onChange={(event) => {
+                setAddressQuery(event.target.value);
+                setShowSuggestions(true);
+              }}
+            />
 
-          {showSuggestions && addressQuery.trim().length > 0 && (
-            <div className="absolute z-100000 mt-2 max-h-64 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
-              {!hasGoongApiKey && (
-                <p className="px-4 py-3 text-sm text-amber-600">
-                  Chưa cấu hình VITE_GOONG_API_KEY, không thể tìm địa chỉ.
-                </p>
-              )}
-
-              {hasGoongApiKey && addressQuery.trim().length < 3 && (
-                <p className="px-4 py-3 text-sm text-gray-500">Nhập ít nhất 3 ký tự để tìm kiếm.</p>
-              )}
-
-              {hasGoongApiKey && shouldSearch && isSearchingAddress && (
-                <p className="px-4 py-3 text-sm text-gray-500">Đang tìm địa chỉ...</p>
-              )}
-
-              {hasGoongApiKey &&
-                shouldSearch &&
-                !isSearchingAddress &&
-                suggestions.length === 0 && (
-                  <p className="px-4 py-3 text-sm text-gray-500">Không tìm thấy địa chỉ phù hợp.</p>
+            {showSuggestions && addressQuery.trim().length > 0 && (
+              <div className="absolute z-100000 mt-2 max-h-64 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                {!hasGoongApiKey && (
+                  <p className="px-4 py-3 text-sm text-amber-600">
+                    Chưa cấu hình VITE_GOONG_API_KEY, không thể tìm địa chỉ.
+                  </p>
                 )}
 
-              {hasGoongApiKey &&
-                suggestions.map((result) => (
-                  <button
-                    key={result.place_id}
-                    type="button"
-                    onClick={() => handleSelectAddress(result)}
-                    className="block w-full border-b border-gray-100 px-4 py-3 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 last:border-b-0"
-                  >
-                    {result.formatted_address}
-                  </button>
-                ))}
-            </div>
-          )}
+                {hasGoongApiKey && addressQuery.trim().length < 3 && (
+                  <p className="px-4 py-3 text-sm text-gray-500">
+                    Nhập ít nhất 3 ký tự để tìm kiếm.
+                  </p>
+                )}
+
+                {hasGoongApiKey && shouldSearch && isSearchingAddress && (
+                  <p className="px-4 py-3 text-sm text-gray-500">Đang tìm địa chỉ...</p>
+                )}
+
+                {hasGoongApiKey &&
+                  shouldSearch &&
+                  !isSearchingAddress &&
+                  suggestions.length === 0 && (
+                    <p className="px-4 py-3 text-sm text-gray-500">
+                      Không tìm thấy địa chỉ phù hợp.
+                    </p>
+                  )}
+
+                {hasGoongApiKey &&
+                  suggestions.map((result) => (
+                    <button
+                      key={result.place_id}
+                      type="button"
+                      onClick={() => handleSelectAddress(result)}
+                      className="block w-full border-b border-gray-100 px-4 py-3 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 last:border-b-0"
+                    >
+                      {result.formatted_address}
+                    </button>
+                  ))}
+              </div>
+            )}
+          </div>
+
+          <div className="w-full h-150! min-h-150 flex">
+            <Suspense fallback={<div>Đang tải bản đồ</div>}>
+              {
+                <MapComponent
+                  center={selectedPosition}
+                  markerPosition={selectedPosition}
+                  onPositionChange={handleMapPositionChange}
+                  onInteractionModeChange={handleMapModeChange}
+                />
+              }
+            </Suspense>
+          </div>
         </div>
 
-        <div className="w-full h-150! min-h-150">
-          <Suspense fallback={<div>Đang tải bản đồ</div>}>
-            {
-              <MapComponent
-                center={selectedPosition}
-                markerPosition={selectedPosition}
-                onPositionChange={handleMapPositionChange}
-                onInteractionModeChange={handleMapModeChange}
-              />
-            }
-          </Suspense>
+        <div className="flex md:hidden md:relative fixed inset-x-0 bottom-0 md:p-0 p-4 bg-white shadow-2xl z-1000">
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            disabled={isFetchingSiteConfig}
+            loading={isUpsertingSiteConfig || isFetchingSiteConfig}
+            className="w-full sm:w-auto"
+          >
+            Lưu thay đổi
+          </Button>
         </div>
-      </div>
+      </Form>
     </div>
   );
 }

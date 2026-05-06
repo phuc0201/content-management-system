@@ -1,5 +1,5 @@
 import { Image, message, Space, Tooltip } from "antd";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { MdOutlinePushPin } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -10,6 +10,7 @@ import PublishToggle from "../../components/table/PublishToggle";
 import TableShared from "../../components/table/TableShared";
 import { config } from "../../config";
 import { PATH } from "../../constants/path.constant";
+import { useDebounce } from "../../hooks/useDebounce";
 import { useGetCategoriesQuery } from "../../services/category.service";
 import {
   useCreateProductMutation,
@@ -21,7 +22,8 @@ import type { Product } from "../../types/product.type";
 
 export default function Products() {
   const navigate = useNavigate();
-  const [suppressNextRefetch, setSuppressNextRefetch] = useState(false);
+  // const [suppressNextRefetch, setSuppressNextRefetch] = useState(false);
+  const [pinningId, setPinningId] = useState<number | null>(null);
 
   const [createProduct, { isLoading: isCreatingProduct }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdatingProduct }] = useUpdateProductMutation();
@@ -32,6 +34,7 @@ export default function Products() {
     pageSize: 10,
   });
   const [searchValue, setSearchValue] = useState("");
+  const debouncedSearch = useDebounce(searchValue, 500);
 
   const {
     data: productResults,
@@ -40,17 +43,25 @@ export default function Products() {
   } = useGetProductsQuery({
     pagination: paginationState,
     ...(selectedCategory ? { filters: { categoryId: selectedCategory } } : {}),
+    ...(debouncedSearch
+      ? {
+          filters: {
+            ...(selectedCategory ? { categoryId: selectedCategory } : {}),
+            q: debouncedSearch,
+          },
+        }
+      : {}),
   } as any);
 
   const { data: categoryResults } = useGetCategoriesQuery({});
 
   const [removeProduct] = useRemoveProductMutation();
 
-  useEffect(() => {
-    if (!fetchingProducts && suppressNextRefetch) {
-      setSuppressNextRefetch(false);
-    }
-  }, [fetchingProducts, suppressNextRefetch]);
+  // useEffect(() => {
+  //   if (!fetchingProducts && suppressNextRefetch) {
+  //     setSuppressNextRefetch(false);
+  //   }
+  // }, [fetchingProducts, suppressNextRefetch]);
 
   const columns = [
     {
@@ -59,13 +70,20 @@ export default function Products() {
       cellClassName: "w-10",
       align: "center" as const,
       render: (record: Product) => (
-        <Tooltip title={record.pin ? "Xóa khỏi danh sách sản phẩm nổi bật" : "Thêm vào danh sách sản phẩm nổi bật"}>
+        <Tooltip
+          placement="topLeft"
+          title={
+            record.pin
+              ? "Xóa khỏi danh sách sản phẩm nổi bật"
+              : "Thêm vào danh sách sản phẩm nổi bật"
+          }
+        >
           <button
             onClick={(e) => {
               e.stopPropagation();
               handleTogglePin(record);
             }}
-            className={`p-2 rounded transition-all ${
+            className={`p-2 rounded transition-all active:scale-80 ${
               record.pin
                 ? "text-red-500 hover:text-red-600"
                 : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -73,14 +91,16 @@ export default function Products() {
           >
             <MdOutlinePushPin
               size={20}
-              className={`transition-transform duration-300 ${record.pin ? "rotate-45" : ""}`}
+              className={`transition-transform duration-300 ${record.pin ? "rotate-45" : ""} ${
+                pinningId === record.id ? "animate-pin-bounce" : ""
+              }`}
             />
           </button>
         </Tooltip>
       ),
     },
     {
-      key: "Image",
+      key: "image",
       title: "Ảnh",
       render: (record: Product) => {
         const imageSrc = record?.thumbnailUrl ? config.imageBaseUrl + record?.thumbnailUrl : "";
@@ -166,7 +186,7 @@ export default function Products() {
   const handleTogglePublish = async (product: Product, published: boolean) => {
     try {
       await updateProduct({ id: product.id, body: { isDraft: !published } }).unwrap();
-      setSuppressNextRefetch(true);
+      // setSuppressNextRefetch(true);
     } catch (error) {
       console.error("toggle publish failed:", error);
       toast.error("Không thể thay đổi trạng thái hiển thị.");
@@ -175,26 +195,36 @@ export default function Products() {
 
   const handleTogglePin = async (product: Product) => {
     try {
+      setPinningId(product.id);
       await updateProduct({
         id: product.id,
         body: { pin: !product.pin },
       }).unwrap();
-      message.success(product.pin ? "Bỏ ghim sản phẩm" : "Đã ghim sản phẩm thành công");
-      setSuppressNextRefetch(true);
+      toast.success(product.pin ? "Bỏ ghim sản phẩm" : "Đã ghim sản phẩm thành công");
+      // setSuppressNextRefetch(true);
+      setTimeout(() => setPinningId(null), 500);
     } catch (error) {
       console.error("toggle pin failed:", error);
-      message.error("Không thể cập nhật trạng thái ghim.");
+      toast.error("Không thể cập nhật trạng thái ghim.");
+      setPinningId(null);
     }
   };
 
   return (
     <div className="select-none">
       <TableShared<Product>
+        cardConfig={{
+          pinKey: "pin",
+          imageKey: "image",
+          nameKey: "name",
+          statusKey: "isDraft",
+          actionsKey: "actions",
+        }}
         dataSource={productResults?.data || []}
         rowKey={"id"}
         columns={columns}
         loading={productsLoading}
-        fetching={fetchingProducts && !suppressNextRefetch}
+        fetching={fetchingProducts}
         pagination={{
           current: paginationState.current,
           pageSize: paginationState.pageSize,

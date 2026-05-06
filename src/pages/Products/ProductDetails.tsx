@@ -1,4 +1,4 @@
-import { Form, Switch, Typography } from "antd";
+import { Form, Spin, Switch, Typography } from "antd";
 import { useForm, useWatch } from "antd/es/form/Form";
 import "ckeditor5/ckeditor5.css";
 import { lazy, Suspense, useLayoutEffect, useMemo } from "react";
@@ -112,9 +112,15 @@ export default function ProductDetails() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="space-y-6 pb-24 md:pb-0">
+      {isLoading && (
+        <div className="fixed inset-0 z-1000 w-screen h-screen flex items-center justify-center bg-white/20 dark:bg-black/40 backdrop-blur-xs pointer-events-auto">
+          <Spin size="small" description="Đang tải thông tin..." />
+        </div>
+      )}
+
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
           <Title level={4} className="mb-1!">
             {isCreateMode ? "Tạo sản phẩm" : "Chi tiết sản phẩm"}
           </Title>
@@ -122,14 +128,40 @@ export default function ProductDetails() {
             Cập nhật thông tin, mô tả và ảnh sản phẩm.
           </Text>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate(PATH.PRODUCT)}>
+        <div className="hidden md:grid md:w-auto md:grid-cols-2 md:gap-2 md:items-center md:justify-end">
+          <Button
+            variant="outline"
+            onClick={() => navigate(PATH.PRODUCT)}
+            className="h-11 w-full rounded-xl font-semibold md:h-10 md:w-auto md:rounded-lg"
+          >
             Quay lại
           </Button>
           <SplitButton
             loading={isLoading || updating}
             onSave={handleSave}
             isDraft={productResult?.data?.isDraft}
+            fullWidth
+            className="h-11 rounded-xl md:h-10 md:rounded-lg"
+          />
+        </div>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 p-4 backdrop-blur md:hidden dark:border-gray-700 dark:bg-gray-900/95 mb-0!">
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="outline"
+            onClick={() => navigate(PATH.PRODUCT)}
+            className="h-11 w-full rounded-xl font-semibold"
+          >
+            Quay lại
+          </Button>
+          <SplitButton
+            loading={isLoading || updating}
+            onSave={handleSave}
+            isDraft={productResult?.data?.isDraft}
+            fullWidth
+            menuPlacement="top"
+            className="h-11 rounded-xl"
           />
         </div>
       </div>

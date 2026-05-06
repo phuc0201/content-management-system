@@ -14,8 +14,8 @@ createRoot(document.getElementById("root")!).render(
       <AuthProvider>
         <App />
         <ToastContainer
-          position="top-right"
-          autoClose={2000}
+          position={"top-right"}
+          autoClose={600}
           hideProgressBar={false}
           newestOnTop={false}
           closeOnClick

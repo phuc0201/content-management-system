@@ -7,6 +7,9 @@ interface SplitButtonProps {
   onSave: (isPublished: boolean) => void;
   loading?: boolean;
   isDraft?: boolean;
+  className?: string;
+  fullWidth?: boolean;
+  menuPlacement?: "top" | "bottom";
 }
 
 const options = [
@@ -32,6 +35,9 @@ export default function SplitButton({
   onSave,
   loading = false,
   isDraft = false,
+  className = "",
+  fullWidth = false,
+  menuPlacement = "bottom",
 }: SplitButtonProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -50,12 +56,12 @@ export default function SplitButton({
   }, []);
 
   return (
-    <div ref={ref} className="relative inline-flex">
+    <div ref={ref} className={`relative inline-flex ${fullWidth ? "w-full" : ""} ${className}`}>
       <button
         type="button"
         disabled={loading}
         onClick={() => onSave(isPub)}
-        className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-l-lg hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors`}
+        className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-l-lg hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors ${fullWidth ? "flex-1 justify-center" : ""}`}
       >
         {isPub ? <FiUpload size={14} /> : <FiEdit3 size={14} />}
         {isPub ? "Lưu & Đăng" : "Lưu nháp"}
@@ -76,7 +82,11 @@ export default function SplitButton({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+6px)] z-50 min-w-72 rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div
+          className={`absolute right-0 z-50 min-w-72 rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden ${
+            menuPlacement === "top" ? "bottom-[calc(100%+6px)]" : "top-[calc(100%+6px)]"
+          }`}
+        >
           {options.map(({ status, label, desc, Icon, iconColor, iconBg }) => (
             <button
               key={status}

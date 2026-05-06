@@ -8,6 +8,7 @@ export interface Blog extends Record<string, unknown> {
   isDraft: boolean;
   createdAt?: string;
   updatedAt?: string;
+  q?: string;
 }
 
 export interface BlogImage {

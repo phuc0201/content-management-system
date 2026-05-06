@@ -1,4 +1,4 @@
-import { Tabs, Typography } from "antd";
+import { Spin, Tabs, Typography } from "antd";
 import { useMemo, useState, type ReactNode } from "react";
 import AnnouncementManager from "../../components/siteconfig/AnnouncementManager";
 import BrandIdentitySettings from "../../components/siteconfig/BrandIdentitySettings";
@@ -19,7 +19,7 @@ type TabConfig = {
 
 export default function SiteConfig() {
   const [activeTab, setActiveTab] = useState("brand");
-  const { data: siteConfigResult } = useGetSiteConfigsQuery({});
+  const { data: siteConfigResult, isFetching: isFetchingSiteConfig } = useGetSiteConfigsQuery({});
 
   const brandIdetityConfig = useMemo(() => {
     return {
@@ -103,7 +103,12 @@ export default function SiteConfig() {
   ];
 
   return (
-    <div className="">
+    <div className="relative">
+      {isFetchingSiteConfig && (
+        <div className="fixed inset-0 z-1000 w-screen h-screen flex items-center justify-center bg-white/20 dark:bg-black/40 backdrop-blur-xs pointer-events-auto">
+          <Spin size="small" description="Đang tải thông tin..." />
+        </div>
+      )}
       <div className="bg-white dark:bg-gray-900 pt-4">
         <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
           <div>

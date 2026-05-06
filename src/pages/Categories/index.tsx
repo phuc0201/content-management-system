@@ -92,9 +92,9 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleDelete = async (category: Category) => {
+  const handleDelete = async (id: number) => {
     try {
-      await deleteCategory(category.id).unwrap();
+      await deleteCategory({ id }).unwrap();
       toast.success("Đã xóa danh mục.");
     } catch (error) {
       console.error(error);
@@ -104,7 +104,7 @@ export default function CategoriesPage() {
 
   const columns = [
     {
-      key: "name",
+      key: "nameCategory",
       title: "Tên danh mục",
       render: (row: Category) => <span>{row.name}</span>,
     },
@@ -116,7 +116,7 @@ export default function CategoriesPage() {
       render: (row: Category) => (
         <Space>
           <EditButton onClick={() => openEditModal(row)} />
-          <DeleteButton onClick={() => void handleDelete(row)} />
+          <DeleteButton onClick={() => handleDelete(row?.id)} />
         </Space>
       ),
     },

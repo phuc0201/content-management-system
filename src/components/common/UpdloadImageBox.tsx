@@ -177,7 +177,7 @@ const UploadImageBox = ({ value, onChange, maxSizeMB = 5 }: UploadImageBoxProps)
           <div className="relative group bg-gray-100 dark:bg-gray-800 max-h-72 h-72 overflow-hidden">
             <img src={preview.preview} alt="Preview" className="w-full max-h-72 object-contain" />
 
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/40 md:opacity-0 opacity-100 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <button
                 onClick={handleRemove}
                 className="flex items-center gap-2 px-4 py-2 bg-white text-gray-800 rounded-lg font-medium text-sm hover:bg-red-50 hover:text-red-600 transition-colors shadow-md"

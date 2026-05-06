@@ -1,5 +1,5 @@
 import { Space } from "antd";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import DeleteButton from "../../components/table/DeleteButton";
@@ -7,6 +7,7 @@ import EditButton from "../../components/table/EditButton";
 import PublishToggle from "../../components/table/PublishToggle";
 import TableShared from "../../components/table/TableShared";
 import { PATH } from "../../constants/path.constant";
+import { useDebounce } from "../../hooks/useDebounce";
 import {
   useCreateBlogMutation,
   useGetBlogsQuery,
@@ -24,26 +25,26 @@ export default function BlogList() {
   });
   const [searchValue, setSearchValue] = useState("");
 
-  const { data: blogResults, isLoading: blogsLoading } = useGetBlogsQuery({
+  const debouncedSearch = useDebounce(searchValue, 500);
+
+  const {
+    data: blogResults,
+    isLoading: blogsLoading,
+    isFetching: fetchingBlogs,
+  } = useGetBlogsQuery({
     pagination: paginationState,
-  });
+    ...(debouncedSearch
+      ? {
+          filters: {
+            q: debouncedSearch,
+          },
+        }
+      : {}),
+  } as any);
 
   const [createBlog, { isLoading: creating }] = useCreateBlogMutation();
   const [updateBlog, { isLoading: isUpdatingBlog }] = useUpdateBlogMutation();
-  const [removeBlog, { isLoading: removingBlog }] = useRemoveBlogMutation();
-
-  const filteredBlogs = useMemo(() => {
-    const keyword = searchValue.trim().toLowerCase();
-    if (!keyword) return blogResults?.data || [];
-
-    return (blogResults?.data || []).filter((blog) =>
-      String(blog.title || "")
-        .toLowerCase()
-        .includes(keyword),
-    );
-  }, [blogResults, searchValue]);
-
-  const pageTotal = filteredBlogs.length;
+  const [removeBlog] = useRemoveBlogMutation();
 
   const columns = [
     {
@@ -93,7 +94,7 @@ export default function BlogList() {
           <DeleteButton
             onClick={async () => {
               try {
-                await removeBlog(record.id).unwrap();
+                await removeBlog({ id: record.id }).unwrap();
                 toast.success(`Đã xóa bài viết ${record.title}`);
               } catch (error) {
                 console.error(error);
@@ -128,15 +129,21 @@ export default function BlogList() {
   return (
     <div className="select-none h-full">
       <TableShared<Blog>
-        dataSource={filteredBlogs}
+        cardConfig={{
+          nameKey: "title",
+          statusKey: "isDraft",
+          actionsKey: "actions",
+        }}
+        dataSource={blogResults?.data || []}
         rowKey={"id"}
         columns={columns}
-        loading={blogsLoading || removingBlog}
+        loading={blogsLoading}
+        fetching={fetchingBlogs}
         pagination={{
           current: paginationState.current,
           pageSize: paginationState.pageSize,
           totalPage: 1,
-          totalItem: pageTotal,
+          totalItem: blogResults?.meta?.pagination?.totalItems || 0,
           pageSizeOptions: [10, 20, 50],
           onChange: (page: number, pageSize: number) => {
             setPaginationState({
