@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { AiOutlineInbox, AiOutlineProduct } from "react-icons/ai";
 import { GoWorkflow } from "react-icons/go";
+import { IoIosLogOut } from "react-icons/io";
 import { IoDocumentTextOutline, IoSettingsOutline } from "react-icons/io5";
 import { MdOutlineMail } from "react-icons/md";
 import { PiNewspaperClipping } from "react-icons/pi";
@@ -120,6 +121,22 @@ const Sidebar: React.FC = () => {
               </NavLink>
             </li>
           ))}
+
+          <li>
+            <button
+              className="menu-item-inactive menu-item group w-full"
+              onClick={() => {
+                // logout logic
+              }}
+            >
+              <span className="menu-item-icon-size">
+                <IoIosLogOut />
+              </span>
+              {(isExpanded || isHovered || isMobileOpen) && (
+                <span className="menu-item-text">Đăng xuất</span>
+              )}
+            </button>
+          </li>
         </ul>
       </nav>
     </aside>

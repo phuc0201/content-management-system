@@ -19,6 +19,9 @@ export default defineConfig({
       },
     }),
   ],
+  optimizeDeps: {
+    include: ["react", "react-dom", "antd", "axios"],
+  },
   build: {
     chunkSizeWarningLimit: 800,
     rollupOptions: {
