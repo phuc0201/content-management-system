@@ -101,6 +101,7 @@ export default function ContactIcon({ contacts }: ContactIconProps) {
           type: SiteConfigType.Contact,
           title: trimmedName,
           link: trimmedLink,
+          content: "",
         }).unwrap();
         targetId = created.id;
       }
@@ -179,7 +180,7 @@ export default function ContactIcon({ contacts }: ContactIconProps) {
             }}
             startIcon={<PlusIcon />}
           >
-            Thêm Icon liên hệ
+            Thêm
           </Button>
         </div>
       </div>
@@ -219,7 +220,7 @@ export default function ContactIcon({ contacts }: ContactIconProps) {
                   <div className="text-sm font-medium mt-2 text-gray-800 dark:text-gray-100">
                     {it.title}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-37.5">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate md:max-w-37.5 max-w-20">
                     {it.link}
                   </div>
                 </div>

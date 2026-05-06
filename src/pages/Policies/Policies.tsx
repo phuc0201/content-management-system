@@ -29,7 +29,7 @@ export default function Policies() {
   const handleCreate = async () => {
     try {
       const { data: newPolicy } = await createPolicy({
-        title: "Chính sách mới",
+        title: "Chính sách nháp",
         content: "",
       });
 

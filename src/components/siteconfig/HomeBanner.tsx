@@ -117,7 +117,7 @@ export default function HomeBanner({ homeBanner }: HomeBannerProps) {
             onClick={() => openModal(null)}
             startIcon={<PlusIcon />}
           >
-            Thêm ảnh banner
+            Thêm
           </Button>
         </div>
       </div>

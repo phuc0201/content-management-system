@@ -76,7 +76,7 @@ export default function PolicyDetails() {
           <div className="grid grid-cols-2 gap-2">
             <Button
               variant="outline"
-              onClick={() => navigate(PATH.BLOG)}
+              onClick={() => navigate(PATH.POLICY)}
               className="h-11 w-full rounded-xl font-semibold"
             >
               Quay lại
