@@ -52,6 +52,7 @@ export default function HomeBanner({ homeBanner }: HomeBannerProps) {
           id: bannerId as string,
           type: "site-config",
           siteConfigId: bannerId,
+          quality: 1,
         }).unwrap();
         toast.success("Lưu ảnh banner thành công.");
       } else if (imageEditing?.id && selectedImage instanceof File) {
@@ -61,6 +62,7 @@ export default function HomeBanner({ homeBanner }: HomeBannerProps) {
           id: bannerId as string,
           type: "site-config",
           siteConfigId: bannerId,
+          quality: 1,
         }).unwrap();
         toast.success("Cập nhật ảnh banner thành công.");
       }
