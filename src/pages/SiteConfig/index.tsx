@@ -109,7 +109,7 @@ export default function SiteConfig() {
           <Spin size="small" description="Đang tải thông tin..." />
         </div>
       )}
-      <div className="bg-white dark:bg-gray-900 pt-4">
+      <div className="dark:bg-gray-900 pt-4">
         <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
           <div>
             <div className="mb-4">
