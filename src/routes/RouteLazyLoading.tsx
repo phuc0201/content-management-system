@@ -52,7 +52,7 @@ const appRoutes: AppRouteItem[] = [
     key: PATH.BLOG,
     path: PATH.BLOG,
     title: "Blog",
-    breadcrumb: "Bài viết",
+    breadcrumb: "Tin tức",
     component: BlogLayout,
     children: [
       {
@@ -66,14 +66,14 @@ const appRoutes: AppRouteItem[] = [
       {
         key: `${PATH.BLOG}-edit`,
         path: ":id",
-        title: "Chỉnh sửa bài viết",
+        title: "Chỉnh sửa tin tức",
         breadcrumb: "Chi tiết",
         component: BlogDetailsPage,
       },
       {
         key: `${PATH.BLOG}-create`,
         path: "create",
-        title: "Tạo mới bài viết",
+        title: "Tạo mới tin tức",
         breadcrumb: "Tạo mới",
         component: BlogDetailsPage,
       },

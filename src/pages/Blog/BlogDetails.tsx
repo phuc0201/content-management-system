@@ -83,7 +83,7 @@ export default function BlogDetails() {
         form.setFieldValue("thumbnailUrl", uploadedThumbnailUrl);
       }
 
-      toast.success("Cập nhật bài viết thành công!");
+      toast.success("Cập nhật tin tức thành công!");
     } catch (error) {
       console.error(error);
       toast.error("Đã có lỗi xảy ra. Vui lòng thử lại.");
@@ -126,10 +126,10 @@ export default function BlogDetails() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <Title level={4} className="mb-1!">
-            Chỉnh sửa bài viết
+            Chỉnh sửa tin tức
           </Title>
           <Text type="secondary" className="text-sm">
-            Cập nhật thông tin, mô tả và nội dung bài viết.
+            Cập nhật thông tin, mô tả và nội dung tin tức.
           </Text>
         </div>
 

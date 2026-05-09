@@ -34,7 +34,7 @@ const MENU_ITEMS = [
     icon: <AiOutlineProduct />,
   },
   {
-    label: "Bài viết",
+    label: "Tin tức",
     path: PATH.BLOG,
     icon: <PiNewspaperClipping />,
   },
