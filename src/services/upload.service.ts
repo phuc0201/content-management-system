@@ -15,7 +15,7 @@ export const uploadImageService = createApi({
       { files: File[]; id: number | string; type: string; quality?: number; siteConfigId?: string }
     >({
       queryFn: async (
-        { files, id, type, quality = 0.85 },
+        { files, id, type, quality = 1 },
         _api,
         _extraOptions,
         baseQuery,
@@ -23,7 +23,8 @@ export const uploadImageService = createApi({
         const formData = new FormData();
         formData.append("type", type);
         formData.append("ownerId", String(id));
-        const processedFiles = await compressAndConvertMultipleImages(files, { quality });
+        const processedFiles: File[] =
+          quality === 1 ? files : await compressAndConvertMultipleImages(files, { quality });
 
         processedFiles.forEach((file) => formData.append("files", file));
 

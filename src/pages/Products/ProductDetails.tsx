@@ -1,7 +1,7 @@
 import { Form, Spin, Switch, Typography } from "antd";
 import { useForm, useWatch } from "antd/es/form/Form";
 import "ckeditor5/ckeditor5.css";
-import { lazy, Suspense, useLayoutEffect, useMemo } from "react";
+import { lazy, Suspense, useLayoutEffect, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import ComponentCard from "../../components/common/ComponentCard";
@@ -34,6 +34,7 @@ export default function ProductDetails() {
   const { id } = useParams();
   const [form] = useForm<ProductFormTypes>();
   const descriptionValue = useWatch("description", form) ?? "";
+  const hasHydratedForm = useRef(false);
 
   const productId = id ? Number(id) : null;
   const isCreateMode = !productId || Number.isNaN(productId);
@@ -66,20 +67,18 @@ export default function ProductDetails() {
   );
 
   useLayoutEffect(() => {
-    if (!productResult?.data || isCreateMode) return;
+    if (!productResult?.data || isCreateMode || hasHydratedForm.current) return;
     const p = productResult.data;
-
-    if (form) {
-      form.setFieldsValue({
-        name: p.name ?? "",
-        price: p.price ? Number(p.price) : "",
-        salePrice: p.salePrice ? Number(p.salePrice) : "",
-        categoryId: String(p.categoryId ?? ""),
-        summary: p.summary ?? "",
-        description: p.description ?? "",
-      });
-    }
-  }, [productResult]);
+    form.setFieldsValue({
+      name: p.name ?? "",
+      price: p.price ? Number(p.price) : "",
+      salePrice: p.salePrice ? Number(p.salePrice) : "",
+      categoryId: String(p.categoryId ?? ""),
+      summary: p.summary ?? "",
+      description: p.description ?? "",
+    });
+    hasHydratedForm.current = true;
+  }, [form, isCreateMode, productResult?.data]);
 
   const buildPayload = (values: ProductFormTypes): CreateProductDTO => ({
     name: values.name.trim(),
