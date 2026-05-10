@@ -224,6 +224,9 @@ export default function ProductDetails() {
             <ProductUploadImgBox
               productId={productResult?.data?.id}
               imageUrls={productResult?.data?.images?.filter((img) => img?.scope === "product")}
+              thumbnailUrl={
+                productResult?.data?.images?.find((img) => img?.scope === "prod-thumb") || undefined
+              }
             />
           </section>
 
