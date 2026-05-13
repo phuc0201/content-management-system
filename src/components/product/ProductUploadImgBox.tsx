@@ -14,7 +14,7 @@ const { Text } = Typography;
 interface ProductUploadImgBoxProps {
   productId?: number;
   imageUrls?: ProductImage[];
-  thumbnailUrl?: ProductImage | null;
+  thumbnailUrl?: string;
   onUploadSuccess?: (urls: string[]) => void;
   onThumbnailUploadSuccess?: (url: string) => void;
 }
@@ -41,14 +41,14 @@ const toThumbnailUploadFile = (image: ProductImage): UploadFile => ({
 export default function ProductUploadImgBox({
   productId,
   imageUrls = [],
-  thumbnailUrl = null,
+  thumbnailUrl = "",
   onUploadSuccess,
   onThumbnailUploadSuccess,
 }: ProductUploadImgBoxProps) {
   const dispatch = useDispatch();
   const [fileList, setFileList] = useState<UploadFile[]>(() => toUploadFiles(imageUrls));
   const [thumbnailFileList, setThumbnailFileList] = useState<UploadFile[]>(() =>
-    thumbnailUrl ? [toThumbnailUploadFile(thumbnailUrl)] : [],
+    thumbnailUrl ? [toThumbnailUploadFile({ url: thumbnailUrl })] : [],
   );
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -64,7 +64,7 @@ export default function ProductUploadImgBox({
 
   useEffect(() => {
     if (thumbnailUrl) {
-      setThumbnailFileList([toThumbnailUploadFile(thumbnailUrl)]);
+      setThumbnailFileList([toThumbnailUploadFile({ url: thumbnailUrl })]);
     } else {
       setThumbnailFileList([]);
     }
