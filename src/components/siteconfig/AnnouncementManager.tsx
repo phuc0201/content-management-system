@@ -1,7 +1,8 @@
 import { CloseOutlined } from "@ant-design/icons";
-import { Empty, Typography } from "antd";
+import { Empty, Modal, Typography } from "antd";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import useIsMobile from "../../hooks/useIsMobile";
 import {
   useCreateSiteConfigMutation,
   useDeleteSiteConfigMutation,
@@ -19,6 +20,9 @@ export default function AnnouncementManager({ topbar = [] }: { topbar: SiteConfi
   const [newText, setNewText] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const isMobile = useIsMobile();
 
   const [createSiteConfig, { isLoading: isCreating }] = useCreateSiteConfigMutation();
   const [updateSiteConfig, { isLoading: isUpdating }] = useUpdateSiteConfigMutation();
@@ -54,6 +58,9 @@ export default function AnnouncementManager({ topbar = [] }: { topbar: SiteConfi
   const startEdit = (a: SiteConfigItem) => {
     setEditingId(a.id);
     setEditText(a.text ?? "");
+    if (isMobile) {
+      setIsModalOpen(true);
+    }
   };
 
   const saveEdit = async () => {
@@ -80,6 +87,7 @@ export default function AnnouncementManager({ topbar = [] }: { topbar: SiteConfi
   const cancelEdit = () => {
     setEditingId(null);
     setEditText("");
+    setIsModalOpen(false);
   };
 
   return (
@@ -137,13 +145,13 @@ export default function AnnouncementManager({ topbar = [] }: { topbar: SiteConfi
                   <div
                     className="flex-1"
                     onKeyDown={(e) => {
-                      if (editingId === item.id && e.key === "Enter") {
+                      if (editingId === item.id && e.key === "Enter" && !isMobile) {
                         e.preventDefault();
                         void saveEdit();
                       }
                     }}
                   >
-                    {editingId === item.id ? (
+                    {editingId === item.id && !isMobile ? (
                       <Input
                         value={editText}
                         onChange={(e) => setEditText(e.target.value)}
@@ -156,7 +164,7 @@ export default function AnnouncementManager({ topbar = [] }: { topbar: SiteConfi
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {editingId === item.id ? (
+                    {editingId === item.id && !isMobile ? (
                       <>
                         <Button onClick={saveEdit} disabled={isUpdating} loading={isUpdating}>
                           Lưu
@@ -184,6 +192,32 @@ export default function AnnouncementManager({ topbar = [] }: { topbar: SiteConfi
           )}
         </div>
       </div>
+
+      <Modal
+        title="Chỉnh sửa thông báo"
+        open={isModalOpen}
+        onOk={saveEdit}
+        onCancel={cancelEdit}
+        okText="Lưu"
+        cancelText="Hủy"
+        confirmLoading={isUpdating}
+      >
+        <div className="py-4">
+          <Input
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            placeholder="Nhập nội dung thông báo..."
+            aria-label="Chỉnh sửa nội dung thông báo"
+            disabled={isUpdating}
+            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void saveEdit();
+              }
+            }}
+          />
+        </div>
+      </Modal>
     </div>
   );
 }
