@@ -1,6 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import useModal from "antd/es/modal/useModal";
+import type { CSSProperties } from "react";
 import { CiEdit, CiTrash } from "react-icons/ci";
 import { toast } from "react-toastify";
 import { config } from "../../config";
@@ -20,7 +21,7 @@ export default function ManuProcessStepItem({ step, onEdit, onDelete, isOverlay 
     id: step.id ?? step.title,
   });
 
-  const style = {
+  const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition: isOverlay ? undefined : transition,
     touchAction: "none",
