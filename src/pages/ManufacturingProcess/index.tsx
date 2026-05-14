@@ -308,20 +308,22 @@ export default function ManufacturingProcessPage() {
                     <Button
                       variant="outline"
                       onClick={handleSaveOrder}
-                      loading={isSavingOrder}
                       disabled={isSavingOrder}
+                      className="whitespace-nowrap"
                     >
                       Lưu thứ tự
                     </Button>
                   ) : null}
-                  <Button
-                    variant="primary"
-                    onClick={() => openModal(undefined)}
-                    disabled={isSavingOrder}
-                    className="whitespace-nowrap"
-                  >
-                    Thêm bước
-                  </Button>
+                  {!isOrderDirty && (
+                    <Button
+                      variant="primary"
+                      onClick={() => openModal(undefined)}
+                      disabled={isSavingOrder}
+                      className="whitespace-nowrap"
+                    >
+                      Thêm bước
+                    </Button>
+                  )}
                 </div>
               </div>
 

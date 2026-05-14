@@ -32,9 +32,7 @@ export default function BlogDetails() {
 
   const contentImageIds = useMemo(
     () =>
-      (blogResult?.data?.images || [])
-        .filter((img) => img?.scope === "prod-desc")
-        .map((img) => img?.id),
+      (blogResult?.data?.images || []).filter((img) => img?.scope === "blog").map((img) => img?.id),
     [blogResult?.data?.images],
   );
 

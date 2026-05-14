@@ -43,7 +43,7 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       className={`relative inline-flex items-center justify-center gap-2 rounded-lg transition-all duration-300 ${className} ${
         sizeClasses[size]
-      } ${variantClasses[variant]} ${disabled || loading ? "cursor-not-allowed opacity-50 pl-10" : ""}`}
+      } ${variantClasses[variant]} ${loading ? "pl-10" : ""} ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
       onClick={onClick}
       disabled={disabled || loading}
     >

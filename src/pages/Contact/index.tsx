@@ -364,7 +364,7 @@ export default function Contact() {
             )}
           </div>
 
-          <div className="w-full h-150! min-h-150 flex">
+          <div className="w-full lg:h-150! lg:min-h-150 h-[20vh] flex">
             <Suspense fallback={<div>Đang tải bản đồ</div>}>
               {
                 <MapComponent

@@ -23,6 +23,8 @@ export default function ManuProcessStepItem({ step, onEdit, onDelete, isOverlay 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition: isOverlay ? undefined : transition,
+    touchAction: "none",
+    userSelect: "none",
   };
 
   const handleDelete = () => {
@@ -51,6 +53,7 @@ export default function ManuProcessStepItem({ step, onEdit, onDelete, isOverlay 
     >
       <div
         {...(isOverlay ? {} : { ...attributes, ...listeners })}
+        style={{ touchAction: "none" }}
         className="text-gray-400 cursor-grab active:cursor-grabbing text-xl select-none px-1 hover:text-gray-600"
       >
         ⠿
