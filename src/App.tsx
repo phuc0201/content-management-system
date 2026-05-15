@@ -7,10 +7,14 @@ import { SiteConfigType } from "./constants/siteConfig.constant";
 import { useTheme } from "./providers/ThemeProvider";
 import { router } from "./routes/router";
 import { useGetSiteConfigsQuery } from "./services/siteConfig.service";
+import { getAccessToken } from "./utils/authHelpers";
 
 export default function App() {
   const { theme } = useTheme();
-  const { data: siteConfigs } = useGetSiteConfigsQuery({});
+  const hasToken = !!getAccessToken();
+
+  // Skip query khi chưa có token để tránh loop reload sau logout
+  const { data: siteConfigs } = useGetSiteConfigsQuery({}, { skip: !hasToken });
 
   const faviconRaw = siteConfigs?.data?.find((item) => item.type === SiteConfigType.Favicon)?.images?.[0]?.url;
   const faviconUrl = faviconRaw ? `${config.imageBaseUrl}${faviconRaw}` : LogoDefault;
