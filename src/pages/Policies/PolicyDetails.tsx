@@ -47,7 +47,7 @@ export default function PolicyDetails() {
   }, [policyData, form]);
 
   return (
-    <Form form={form} layout="vertical" onFinish={handleSave}>
+    <Form form={form} layout="vertical" onFinish={handleSave} className="pb-24! lg:p-0!">
       {isLoading && (
         <div className="fixed inset-0 z-1000 w-screen h-screen flex items-center justify-center bg-white/20 dark:bg-black/40 backdrop-blur-xs pointer-events-auto">
           <Spin size="small" description="Đang tải thông tin..." />
