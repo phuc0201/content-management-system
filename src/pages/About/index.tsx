@@ -20,6 +20,7 @@ export default function AboutPage() {
   const [form] = useForm();
   const [modal, contextHolder] = useModal();
   const isDirty = useRef(false);
+  const coreValuesRef = useRef<HTMLDivElement>(null);
 
   const { data: aboutContent, isFetching, isLoading: isGetting } = useGetAboutQuery();
   const [createAbout, { isLoading: isCreating }] = useCreateAboutUpsertMutation();
@@ -49,6 +50,21 @@ export default function AboutPage() {
       },
     });
   }, [modal, form, aboutContent]);
+
+  const handleAddCoreValue = useCallback((add: (defaultValue?: string) => void) => {
+    add("");
+    // Scroll to bottom on mobile after adding
+    setTimeout(() => {
+      if (coreValuesRef.current && window.innerWidth < 768) {
+        const allInputs = coreValuesRef.current.querySelectorAll('input');
+        const lastInput = allInputs[allInputs.length - 1];
+        if (lastInput) {
+          lastInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          lastInput.focus();
+        }
+      }
+    }, 100);
+  }, []);
 
   async function handleSave() {
     try {
@@ -154,8 +170,8 @@ export default function AboutPage() {
           {/* Giá trị cốt lõi */}
           <Form.List name="core_values">
             {(fields, { add, remove }) => (
-              <section className="rounded-xl border bg-white dark:bg-gray-800 dark:border-gray-700 p-6 mb-6">
-                <div className="flex items-center justify-between mb-3">
+              <section ref={coreValuesRef} className="rounded-xl border bg-white dark:bg-gray-800 dark:border-gray-700 p-4 sm:p-6 mb-6 pb-20 md:pb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                   <div>
                     <h4 className="text-lg font-semibold">Giá trị cốt lõi</h4>
                     {fields.length > 0 && (
@@ -178,16 +194,17 @@ export default function AboutPage() {
                       size="md"
                       disabled={isFetching || isGetting}
                       loading={isGetting || isFetching}
-                      onClick={() => add("")}
+                      onClick={() => handleAddCoreValue(add)}
+                      className="flex-1 sm:flex-none"
                     >
                       Thêm giá trị
                     </Button>
                   </div>
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {fields.map(({ key, name }) => (
-                    <div key={key} className="flex gap-3 items-start">
+                    <div key={key} className="flex gap-2 sm:gap-3 items-start">
                       {/* Số thứ tự */}
                       <span className="text-gray-400 text-sm min-w-5 pt-2.5 text-right select-none">
                         {name + 1}.
