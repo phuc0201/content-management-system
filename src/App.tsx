@@ -2,11 +2,18 @@ import { ConfigProvider, theme as antdTheme } from "antd";
 import { useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
 import LogoDefault from "./assets/logo_default.png";
+import { config } from "./config";
+import { SiteConfigType } from "./constants/siteConfig.constant";
 import { useTheme } from "./providers/ThemeProvider";
 import { router } from "./routes/router";
+import { useGetSiteConfigsQuery } from "./services/siteConfig.service";
 
 export default function App() {
   const { theme } = useTheme();
+  const { data: siteConfigs } = useGetSiteConfigsQuery({});
+
+  const faviconRaw = siteConfigs?.data?.find((item) => item.type === SiteConfigType.Favicon)?.images?.[0]?.url;
+  const faviconUrl = faviconRaw ? `${config.imageBaseUrl}${faviconRaw}` : LogoDefault;
 
   function setFavicon(url?: string) {
     const id = "app-favicon";
@@ -25,13 +32,13 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
-        setFavicon(LogoDefault);
+        setFavicon(faviconUrl);
       } catch (error) {
         console.error("Failed to set favicon:", error);
         setFavicon();
       }
     })();
-  }, []);
+  }, [faviconUrl]);
 
   return (
     <ConfigProvider

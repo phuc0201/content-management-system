@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AiOutlineInbox, AiOutlineProduct } from "react-icons/ai";
 import { GoWorkflow } from "react-icons/go";
 import { IoIosLogOut } from "react-icons/io";
@@ -8,9 +8,12 @@ import { PiNewspaperClipping } from "react-icons/pi";
 import { SlDocs } from "react-icons/sl";
 import { Link, NavLink } from "react-router";
 import LogoDefault from "../assets/logo_default.png";
+import { config } from "../config";
 import { PATH } from "../constants/path.constant";
+import { SiteConfigType } from "../constants/siteConfig.constant";
 import { useAuth } from "../providers/AuthProvider";
 import { useSidebar } from "../providers/SidebarProvider";
+import { useGetSiteConfigsQuery } from "../services/siteConfig.service";
 
 const MENU_ITEMS = [
   {
@@ -60,6 +63,30 @@ const Sidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, closeSidebar } = useSidebar();
   const isSidebarOpen = isExpanded || isHovered || isMobileOpen;
   const sidebarRef = useRef<HTMLElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(74); // default 74px
+
+  const { data: siteConfigs } = useGetSiteConfigsQuery({});
+  const mainLogoRaw = siteConfigs?.data?.find((item) => item.type === SiteConfigType.MainLogo)?.images?.[0]?.url;
+  const subLogoRaw = siteConfigs?.data?.find((item) => item.type === SiteConfigType.SubLogo)?.images?.[0]?.url;
+  const mainLogoUrl = mainLogoRaw ? `${config.imageBaseUrl}${mainLogoRaw}` : LogoDefault;
+  const subLogoUrl = subLogoRaw ? `${config.imageBaseUrl}${subLogoRaw}` : LogoDefault;
+
+  // Đo chiều cao header thực tế
+  useEffect(() => {
+    const header = document.getElementById("app-header");
+    if (!header) return;
+
+    const updateHeight = () => {
+      setHeaderHeight(header.offsetHeight);
+    };
+
+    updateHeight();
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(header);
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (e.target instanceof Element && e.target.closest("[data-sidebar-toggle]")) return;
@@ -75,7 +102,8 @@ const Sidebar: React.FC = () => {
   return (
     <aside
       ref={sidebarRef}
-      className={`fixed select-none flex flex-col top-18.5 lg:top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out md:z-1000 z-100000 border-r border-gray-200
+      style={{ top: window.innerWidth < 1024 ? `${headerHeight}px` : 0 }}
+      className={`fixed select-none flex flex-col px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out md:z-1000 z-100000 border-r border-gray-200
         ${isExpanded || isMobileOpen ? "w-72.5" : isHovered ? "w-72.5" : "w-22.5"}
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}
@@ -85,24 +113,15 @@ const Sidebar: React.FC = () => {
       >
         <Link to="/" className="m-auto">
           {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <img
-                className="dark:hidden m-auto"
-                src={LogoDefault}
-                alt="Logo"
-                width={100}
-                height={40}
-              />
-              <img
-                className="hidden dark:block m-auto"
-                src={LogoDefault}
-                alt="Logo"
-                width={100}
-                height={40}
-              />
-            </>
+            <img
+              className="m-auto object-contain"
+              src={mainLogoUrl}
+              alt="Logo"
+              width={100}
+              height={40}
+            />
           ) : (
-            <img src={LogoDefault} alt="Logo" width={32} height={32} />
+            <img src={subLogoUrl} alt="Logo" width={32} height={32} className="object-contain" />
           )}
         </Link>
       </div>

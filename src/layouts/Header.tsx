@@ -1,9 +1,16 @@
 import { Link } from "react-router";
 import LogoDefault from "../assets/logo_default.png";
+import { config } from "../config";
+import { SiteConfigType } from "../constants/siteConfig.constant";
 import { useSidebar } from "../providers/SidebarProvider";
+import { useGetSiteConfigsQuery } from "../services/siteConfig.service";
 
 const Header: React.FC = () => {
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
+
+  const { data: siteConfigs } = useGetSiteConfigsQuery({});
+  const subLogoRaw = siteConfigs?.data?.find((item) => item.type === SiteConfigType.SubLogo)?.images?.[0]?.url;
+  const subLogoUrl = subLogoRaw ? `${config.imageBaseUrl}${subLogoRaw}` : LogoDefault;
 
   const handleToggle = () => {
     if (window.innerWidth >= 1024) {
@@ -14,7 +21,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 flex w-full bg-white border-gray-200 z-100 dark:border-gray-800 dark:bg-gray-900 lg:h-auto lg:border-b">
+    <header id="app-header" className="sticky top-0 flex w-full bg-white border-gray-200 z-100 dark:border-gray-800 dark:bg-gray-900 lg:h-auto lg:border-b">
       <div className="flex flex-col items-center justify-between grow lg:flex-row lg:px-6">
         <div className="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200 dark:border-gray-800 sm:gap-4 lg:justify-normal lg:border-b-0 lg:px-0 lg:py-4">
           <button
@@ -56,14 +63,14 @@ const Header: React.FC = () => {
             )}
           </button>
 
+          {/* Logo: SubLogo nhỏ gọn, chỉ hiện trên mobile & tablet */}
           <Link to="/" className="lg:hidden">
-            <img className="dark:hidden" src={LogoDefault} alt="Logo" width={50} height={50} />
             <img
-              className="hidden dark:block"
-              src={LogoDefault}
+              src={subLogoUrl}
               alt="Logo"
-              width={50}
-              height={50}
+              width={36}
+              height={36}
+              className="object-contain"
             />
           </Link>
         </div>

@@ -36,21 +36,22 @@ const FIELDS: FieldConfig[] = [
   {
     name: SiteConfigType.MainLogo,
     label: "Logo chính",
-    description: "Hiển thị trên header desktop, email, tài liệu in ấn.",
+    description:
+      "Logo hiển thị ở đầu trang web trên máy tính và trong các tài liệu/email của công ty.",
     recommendedSize: "400 × 120 px",
     maxSizeMB: 2,
   },
   {
     name: SiteConfigType.SubLogo,
     label: "Logo phụ",
-    description: "Hiển thị trên header mobile, email, tài liệu in ấn.",
+    description: "Logo dùng cho giao diện điện thoại hoặc các vị trí cần logo vuông, nhỏ gọn.",
     recommendedSize: "120 × 120 px",
     maxSizeMB: 1,
   },
   {
     name: SiteConfigType.Favicon,
     label: "Favicon",
-    description: "Icon hiển thị trên tab trình duyệt.",
+    description: "Biểu tượng nhỏ hiển thị trên tab trình duyệt cạnh tên website.",
     recommendedSize: "32 × 32 px",
     maxSizeMB: 0.5,
   },
