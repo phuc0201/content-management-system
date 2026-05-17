@@ -2,11 +2,19 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import LogoDefault from "../../assets/logo_default.png";
 import GridShape from "../../components/common/GridShape";
+import { config } from "../../config";
 import { PATH } from "../../constants/path.constant";
+import { SiteConfigType } from "../../constants/siteConfig.constant";
 import { useAuth } from "../../providers/AuthProvider";
+import { useGetSiteConfigsQuery } from "../../services/siteConfig.service";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
+  const { data: siteConfigs } = useGetSiteConfigsQuery({});
+  const mainLogoRaw = siteConfigs?.data?.find(
+    (item) => item.type === SiteConfigType.MainLogo,
+  )?.images?.[0]?.url;
+  const logoUrl = mainLogoRaw ? `${config.imageBaseUrl}${mainLogoRaw}` : LogoDefault;
 
   if (isAuthenticated) return <Navigate to={PATH.ABOUT} replace />;
 
@@ -19,7 +27,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <GridShape />
             <div className="flex flex-col items-center max-w-xs">
               <div className="block mb-4">
-                <img width={231} height={48} src={LogoDefault} alt="Logo" />
+                <img width={231} height={48} src={logoUrl} alt="Logo" />
               </div>
             </div>
           </div>
