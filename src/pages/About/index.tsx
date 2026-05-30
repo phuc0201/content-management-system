@@ -11,7 +11,10 @@ import Input from "../../components/form/input/InputField";
 import TextArea from "../../components/form/input/TextArea";
 import DeleteButton from "../../components/table/DeleteButton";
 import Button from "../../components/ui/button/Button";
-import { useCreateAboutUpsertMutation, useGetAboutQuery } from "../../services/about.service";
+import {
+  useCreateAboutUpsertMutation,
+  useGetAboutQuery,
+} from "../../services/about.service";
 import type { AboutContent } from "../../types/about.type";
 
 const { Title, Text } = Typography;
@@ -22,8 +25,13 @@ export default function AboutPage() {
   const isDirty = useRef(false);
   const coreValuesRef = useRef<HTMLDivElement>(null);
 
-  const { data: aboutContent, isFetching, isLoading: isGetting } = useGetAboutQuery();
-  const [createAbout, { isLoading: isCreating }] = useCreateAboutUpsertMutation();
+  const {
+    data: aboutContent,
+    isFetching,
+    isLoading: isGetting,
+  } = useGetAboutQuery();
+  const [createAbout, { isLoading: isCreating }] =
+    useCreateAboutUpsertMutation();
 
   const isDisabled = isFetching || isGetting || isCreating;
 
@@ -42,7 +50,8 @@ export default function AboutPage() {
       title: "Khôi phục giá trị cốt lõi?",
       centered: true,
       icon: <ExclamationCircleOutlined />,
-      content: "Các thay đổi chưa lưu trong danh sách giá trị cốt lõi sẽ bị mất.",
+      content:
+        "Các thay đổi chưa lưu trong danh sách giá trị cốt lõi sẽ bị mất.",
       okText: "Khôi phục",
       cancelText: "Hủy",
       onOk: () => {
@@ -51,20 +60,23 @@ export default function AboutPage() {
     });
   }, [modal, form, aboutContent]);
 
-  const handleAddCoreValue = useCallback((add: (defaultValue?: string) => void) => {
-    add("");
-    // Scroll to bottom on mobile after adding
-    setTimeout(() => {
-      if (coreValuesRef.current && window.innerWidth < 768) {
-        const allInputs = coreValuesRef.current.querySelectorAll('input');
-        const lastInput = allInputs[allInputs.length - 1];
-        if (lastInput) {
-          lastInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          lastInput.focus();
+  const handleAddCoreValue = useCallback(
+    (add: (defaultValue?: string) => void) => {
+      add("");
+      // Scroll to bottom on mobile after adding
+      setTimeout(() => {
+        if (coreValuesRef.current && window.innerWidth < 768) {
+          const allInputs = coreValuesRef.current.querySelectorAll("input");
+          const lastInput = allInputs[allInputs.length - 1];
+          if (lastInput) {
+            lastInput.scrollIntoView({ behavior: "smooth", block: "center" });
+            lastInput.focus();
+          }
         }
-      }
-    }, 100);
-  }, []);
+      }, 100);
+    },
+    [],
+  );
 
   async function handleSave() {
     try {
@@ -139,9 +151,15 @@ export default function AboutPage() {
             name="intro"
             className="mb-6"
             required
-            rules={[{ required: true, message: "Vui lòng nhập giới thiệu chung." }]}
+            rules={[
+              { required: true, message: "Vui lòng nhập giới thiệu chung." },
+            ]}
           >
-            <TextArea placeholder="Nhập nội dung" rows={6} disabled={isFetching || isGetting} />
+            <TextArea
+              placeholder="Nhập nội dung"
+              rows={6}
+              disabled={isFetching || isGetting}
+            />
           </FormItem>
 
           {/* Tầm nhìn & Sứ mệnh */}
@@ -153,7 +171,11 @@ export default function AboutPage() {
               required
               rules={[{ required: true, message: "Vui lòng nhập tầm nhìn." }]}
             >
-              <TextArea placeholder="Nhập nội dung" rows={5} disabled={isFetching || isGetting} />
+              <TextArea
+                placeholder="Nhập nội dung"
+                rows={5}
+                disabled={isFetching || isGetting}
+              />
             </FormItem>
 
             <FormItem
@@ -163,19 +185,28 @@ export default function AboutPage() {
               required
               rules={[{ required: true, message: "Vui lòng nhập sứ mệnh." }]}
             >
-              <TextArea placeholder="Nhập nội dung" rows={5} disabled={isFetching || isGetting} />
+              <TextArea
+                placeholder="Nhập nội dung"
+                rows={5}
+                disabled={isFetching || isGetting}
+              />
             </FormItem>
           </div>
 
           {/* Giá trị cốt lõi */}
           <Form.List name="core_values">
             {(fields, { add, remove }) => (
-              <section ref={coreValuesRef} className="rounded-xl border bg-white dark:bg-gray-800 dark:border-gray-700 p-4 sm:p-6 mb-6 pb-20 md:pb-6">
+              <section
+                ref={coreValuesRef}
+                className="rounded-xl border bg-white dark:bg-gray-800 dark:border-gray-700 p-4 sm:p-6 mb-6 pb-20 md:pb-6"
+              >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                   <div>
                     <h4 className="text-lg font-semibold">Giá trị cốt lõi</h4>
                     {fields.length > 0 && (
-                      <p className="text-xs text-gray-400 mt-0.5">{fields.length} giá trị</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {fields.length} giá trị
+                      </p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -213,9 +244,17 @@ export default function AboutPage() {
                       <Form.Item
                         name={name}
                         className="flex-1 mb-1!"
-                        rules={[{ required: true, message: "Vui lòng nhập giá trị cốt lõi." }]}
+                        rules={[
+                          {
+                            required: true,
+                            message: "Vui lòng nhập giá trị cốt lõi.",
+                          },
+                        ]}
                       >
-                        <Input placeholder="Nhập nội dung" disabled={isFetching || isGetting} />
+                        <Input
+                          placeholder="Nhập nội dung"
+                          disabled={isFetching || isGetting}
+                        />
                       </Form.Item>
 
                       <DeleteButton
@@ -227,7 +266,8 @@ export default function AboutPage() {
 
                   {fields.length === 0 && (
                     <p className="text-gray-400 text-sm text-center py-4">
-                      Chưa có giá trị cốt lõi nào. Nhấn "Thêm giá trị" để bắt đầu.
+                      Chưa có giá trị cốt lõi nào. Nhấn "Thêm giá trị" để bắt
+                      đầu.
                     </p>
                   )}
                 </div>
@@ -236,7 +276,7 @@ export default function AboutPage() {
           </Form.List>
 
           {/* Sticky bottom bar */}
-          <div className="flex md:relative fixed inset-x-0 bottom-0 md:pt-5 md:px-0 md:pb-0 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 p-4 backdrop-blur">
+          <div className="flex sm:hidden md:relative fixed inset-x-0 bottom-0 md:pt-5 md:px-0 md:pb-0 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 p-4 backdrop-blur">
             <Button
               type="submit"
               variant="primary"
